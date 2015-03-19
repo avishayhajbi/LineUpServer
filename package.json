@@ -1,0 +1,25 @@
+{
+  "name": "LineUpServer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.4.x"
+  },
+  "author": "nir winkler",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.9.2",
+    "cookie-parser": "^1.3.3",
+    "express": "^4.10.1",
+    "express-session": "^1.9.1",
+    "mongoose": "^3.8.18",
+    "morgan": "^1.4.1",
+    "passport": "^0.2.1",
+    "socket.io": "^1.2.0"
+  }
+}
