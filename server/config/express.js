@@ -1,6 +1,7 @@
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var passport = require('passport');
 var logger = require('morgan');
 
 
@@ -11,6 +12,8 @@ module.exports = function(app, config) {
 		extended: true
 	}));
 	app.use(bodyParser.json());
+	app.use(passport.initialize());
+	app.use(passport.session());
 	app.use(allowCrossDomain);
 }
 

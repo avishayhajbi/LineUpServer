@@ -1,7 +1,6 @@
 var express = require('express');
 
-var session = require('express-session');
-var passport = require('passport');
+// var session = require('express-session');
 
 var env = process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -17,4 +16,4 @@ require('./server/config/routes')(app);
 
 
 app.listen(config.port);
-console.log('Listening on port' + config.port + '...');
+console.log('Listening on port:' + config.port + '...');

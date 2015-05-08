@@ -1,34 +1,61 @@
 var mongoose = require('mongoose');
+
+//line data scheme and model
 var dataSchema = mongoose.Schema({}, {
-	strict: false
+    strict: false
 });
 dataSchema.set('collection', 'Lines');
 
-
-var db  = mongoose.model('Lines', dataSchema);
-
-db.getListOfLines = function (cb)  {
-return db.find({}, "title location", cb);
-}
-
-db.findLineByTitle =  function (name ,cb) {
-	var re = new RegExp(name, "i");
-	return db.find({
-		title: re
-	}, "title location" , cb);
-}
-
-db.getNextDate =  function (id ,cb) {
-
-db.find({
-      "_id": id
-    } , function(err , data) { 
-    	line = data[0]._doc;
-    	availableDates= line.availableDates;
-    	delete line.availableDates;
-    	delete line.lineManagerId;
-    	
-    });
+//line scheme functions
+dataSchema.statics.moveToConfirmed = function(id ,meeting, cb) {
+    meeting.time = new Date(meeting.time);
+    delete meeting.lineId;
+    return db.update({
+        "_id":  id
+    }, {
+        $pull: {
+            waitingAproval : {userId: meeting.userId }
+        },
+        $push: {
+            meetings:  meeting
+        }
+    }, cb);
 
 }
-module.exports = db ;
+
+dataSchema.statics.getListOfLines = function(cb) {
+    return db.find({}, "title location", cb);
+}
+
+dataSchema.statics.findLineByTitle = function(name, cb) {
+    var re = new RegExp(name, "i");
+    return db.find({
+        title: re
+    }, "title location", cb);
+}
+
+dataSchema.statics.moveToAproval = function(lineId ,wait ,availableDates , cb) {
+
+    db.update({"_id" :lineId },{$push : {waitingAproval : wait} , $set: {availableDates :  availableDates}  , $inc : { meetingsCounter : 1} } , cb);
+
+}
+
+var db = mongoose.model('Lines', dataSchema);
+exports.db = db;
+
+
+//user data scheme and model
+var userSchema = mongoose.Schema({}, {
+    strict: false
+});
+
+userSchema.statics.getPushToken = function(userid, cb) {
+
+    userdb.find({"userId":userid}, "pushToken" , cb);
+}
+
+var userdb = mongoose.model('Users', userSchema);
+
+
+
+exports.userdb = userdb;

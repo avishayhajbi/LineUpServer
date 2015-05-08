@@ -1,8 +1,9 @@
 var mongoose = require('mongoose');
-var db = require('./SchemeModel.js');
-
+var db = require('./SchemeModel.js').db;
+var utils = require('../includes/utils.js');
 
 exports.getlineList = function(req, res) {
+
   db.getListOfLines(function(err, data) {
     if (err) {
       console.log(err);
@@ -25,45 +26,65 @@ exports.searchlineList = function(req, res) {
 };
 
 exports.getLine = function(req, res) {
-  console.log("lineID:" + req.query.lineId);
-  if (req.query.lineId === undefined || req.query.userId === undefined) {
-    console.log('no search query return nothing');
+
+  var lineId = req.query.lineId;
+  var userId = req.query.userId;
+  if (lineId === undefined || userId === undefined) {
+    console.log('getLine@ no search query return nothing');
     res.send(false);
     return;
   }
-
   db.find({
-    "_id": req.query.lineId
-  }, {
-      availableDates:{$slice:1}
-  }, function(err, data) {
+      "_id": lineId
+    },"ImageURI availableDates confirmTime druation location meetingsCounter title" , 
+    function(err, data) {
+
+      if (err) {
+        console.log("getLine.find.err@ ",err);
+        res.send(false);
+        return;
+      }
       var line = data[0]._doc;
-      db.update( { "_id":  req.query.lineId }, { $pop: { availableDates: -1 } } , function(err ,dat){});
-      db.update( { "_id":  req.query.lineId }, { $push: { waitingAproval: line.availableDates[0] } } , function(err ,dat){});
-      delete line.lineManagerId;
-      delete line.waitingAproval;
-      delete line.__v;
+      var availableDates = line.availableDates;
+      var position , nextMeeting , i;
+      delete line.availableDates;
+      delete(line._id);
+
+      for (i = 0; i < availableDates.length; i++) {
+        if (availableDates[i].nextMeeting !== null) {
+          nextMeeting = availableDates[i].nextMeeting;
+          position = availableDates[i].position;
+          break;
+        }
+      }
+      if (!nextMeeting || nextMeeting === '') {
+        console.log("noRoom");
+        res.send("noRoom");
+        return;
+      }
+      line.time = nextMeeting;
+      line.position = position;
       
-    res.send(line);
-  });
+      res.send(line);
+      availableDates[i].nextMeeting = new Date(availableDates[i].nextMeeting.getTime() + line.druation * 60000);
+      availableDates[i].position++;
+      if (availableDates[i].nextMeeting > availableDates[i].to) {
+        availableDates[i].nextMeeting = null;
+      }
+
+      var wait = {
+        time: line.time,
+        userId: userId
+      };
+
+      db.moveToAproval(lineId, wait, availableDates, function() {
+        if (err) {
+          console.log(err);
+          return;
+        }
+      });
+
+    }
+  );
 
 };
-
-// function getNextMeeting(dates) {
-//   debugger;
-//   console.log(dates);
-//   if (dates.length === 0 || dates == undefined) return false;
-//   for (var i = 0; i < dates.length; i++) {
-//     if (dates[i].meetings.length > 0) {
-//       var meeting = {
-//         time: dates[i].meetings.shift(),
-//         day: dates[i].day
-//       };
-//       return [meeting, dates];
-//     } else {
-//       dates.shift();
-//       i--;
-//     }
-//   }
-//   return false;
-// }

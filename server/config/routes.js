@@ -2,26 +2,24 @@ var lineListsServer = require('../models/lineListsServer');
 var meetingServer = require('../models/meetingServer');
 var lineServer = require('../models/lineServer');
 
-var mongoose = require('mongoose');
+var users = require('../models/users');
 
 module.exports = function (app) {
+
 	app.get('/api/lineList?', lineListsServer.getlineList);
 	app.get('/api/searchLineList?', lineListsServer.searchlineList);
 	app.get('/api/getLine?', lineListsServer.getLine);
 
-	app.get('/api/requestMeeting?', meetingServer.requestMeeting);
+	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
+	app.get('/api/cancelConfirm?', meetingServer.cancelConfirm);
+	app.get('/api/getPosition?', meetingServer.getPosition);
+	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
 
 
 	app.get('/api/createLine?', lineServer.createLine);
 
-
-
-// 	app.get('/partials/:partialPath', function (req, res) {
-// 	res.render('partials/' + req.params.partialPath);
-// });
-
-// 	app.get('*', function (req, res) {
-// 	res.render('index');
-// });
+	app.get('/api/userConnect?', users.userConnect);
+    app.get('/api/connectToFB?', users.connectToFaceBook);
+    app.get('/api/pushToken?', users.pushToken);
 	
 }
