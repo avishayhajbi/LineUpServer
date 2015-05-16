@@ -7,7 +7,7 @@ var dataSchema = mongoose.Schema({}, {
 dataSchema.set('collection', 'Lines');
 
 //line scheme functions
-dataSchema.statics.moveToConfirmed = function(id ,meeting, cb) {
+dataSchema.statics.moveToApproved = function(id ,meeting, cb) {
     meeting.time = new Date(meeting.time);
     delete meeting.lineId;
     return db.update({
@@ -34,7 +34,7 @@ dataSchema.statics.findLineByTitle = function(name, cb) {
     }, "title location", cb);
 }
 
-dataSchema.statics.moveToAproval = function(lineId ,wait ,availableDates , cb) {
+dataSchema.statics.moveToWaitAproval = function(lineId ,wait ,availableDates , cb) {
 
     db.update({"_id" :lineId },{$push : {waitingAproval : wait} , $set: {availableDates :  availableDates}  , $inc : { meetingsCounter : 1} } , cb);
 
@@ -42,6 +42,7 @@ dataSchema.statics.moveToAproval = function(lineId ,wait ,availableDates , cb) {
 
 var db = mongoose.model('Lines', dataSchema);
 exports.db = db;
+exports.dataSchema = dataSchema;
 
 
 //user data scheme and model
@@ -51,7 +52,7 @@ var userSchema = mongoose.Schema({}, {
 
 userSchema.statics.getPushToken = function(userid, cb) {
 
-    userdb.find({"userId":userid}, "pushToken" , cb);
+    userdb.findOne({"userId":userid}, "pushToken" , cb);
 }
 
 var userdb = mongoose.model('Users', userSchema);

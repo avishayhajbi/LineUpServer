@@ -130,37 +130,6 @@ exports.changeUserName = function(req, res) {
 }
 
 
-exports.changeUserName = function(req, res) {
-	var userId = req.query.userId;
-	var name = req.query.name;
-
-	userdb.findOneAndUpdate({
-		userId: userId
-	}, {
-		$set: {
-			name: name
-		}
-	}, {
-		upsert: true
-	}, function(err, data) {
-		if (err) {
-			console.log("pushToken.findOneAndUpdate.err@ " + err);
-			res.send(false);
-			return;
-		}
-		if (data.isNew) {
-			res.send("signed");
-			return;
-		} else {
-			res.send("exist");
-			return;
-		}
-
-	});
-
-}
-
-
 exports.notifyUser = function(userId, message) {
 		userdb.getPushToken(userId, function(err, userToken) {
 						if (err) {

@@ -10,11 +10,9 @@ module.exports = function (app) {
 	app.get('/api/searchLineList?', lineListsServer.searchlineList);
 	app.get('/api/getLine?', lineListsServer.getLine);
 
-	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
-	app.get('/api/cancelConfirm?', meetingServer.cancelConfirm);
-	app.get('/api/getPosition?', meetingServer.getPosition);
+	app.get('/api/joinLine?', meetingServer.joinLine);
 	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
-
+	app.get('/api/meetingPosition?', meetingServer.meetingPosition);
 
 	app.get('/api/createLine?', lineServer.createLine);
 
