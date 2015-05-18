@@ -13,8 +13,11 @@ module.exports = function (app) {
 	app.get('/api/joinLine?', meetingServer.joinLine);
 	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
 	app.get('/api/meetingPosition?', meetingServer.meetingPosition);
+	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
 
 	app.get('/api/createLine?', lineServer.createLine);
+	app.get('/api/nextMeeting?', lineServer.nextMeeting);
+	app.get('/api/whatToDo?', lineServer.whatToDo);
 
 	app.get('/api/userConnect?', users.userConnect);
     app.get('/api/connectToFB?', users.connectToFaceBook);

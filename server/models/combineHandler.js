@@ -25,11 +25,11 @@ exports.forwardMeetings = function(data) {
 
 		for (var i = 0; i < meetings.length; i++) {
 			//if day is the same and canceld time was before this meeting 
-			//forward the meeting in druation time and notifiy user
+			//forward the meeting in druation time and notify user
 			if (utils.getFullDate(meetings[i].time) === utils.getFullDate(time) && utils.getFullTime(time) < utils.getFullTime(meetings[i].time)) {
 				meetings[i].time = new Date(meetings[i].time.getTime() - druation * 60000);
 				var message = {
-					message: "your time in line: " + title + " updated ,  new time is: " + meetings[i].time,
+					message: "204",
 					title: "LineUp",
 					key1: lineId,
 					key2: meetings[i].time

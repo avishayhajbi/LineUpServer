@@ -19,13 +19,12 @@ exports.joinLine = function(req, res) {
 		res.send(false);
 		return;
 	}
-	debugger;
 	console.log("meeting:" + meeting);
 	var lineId = meeting.lineId;
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-		debugger;
+		
 		if (err || !data) {
 			console.log("joinLine.findOne.err@ ", err);
 			res.send(false);
@@ -39,6 +38,7 @@ exports.joinLine = function(req, res) {
 			res.send("noRoom");
 			return;
 		}
+		meeting.confirmed = false;
 		meeting.time = line.availableDates[line.day.indexOfDay].nextMeeting;
 		line.meetingsCounter++;
 
@@ -70,7 +70,7 @@ exports.joinLine = function(req, res) {
 				}
 			},
 			function(err, data) {
-				if (err || !data){
+				if (err || !data) {
 					console.log("joinLine.findOne.err@ ", err);
 					res.send(false);
 					return;
@@ -121,6 +121,40 @@ exports.meetingPosition = function(req, res) {
 		res.send(false);
 	});
 }
+
+
+exports.confirmMeeting = function(req, res) {
+	
+	if (!req.query.lineId || !req.query.userId) {
+		console.log("no request");
+		res.send(false);
+		return;
+	}
+	var lineId = req.query.lineId;
+	var userId = req.query.userId;
+
+	db.update({
+			"_id": lineId, meetings: {
+					$elemMatch: {
+						userId: userId
+					}
+				}
+		}, {
+			$set : {
+				'meetings.$.confirmed' : true }
+			},
+			function(err, data) {
+			
+				if (err || !data || data === 0) {
+					console.log(err);
+					res.send(false);
+					return;
+				}
+				res.send(true);
+			});
+	
+};
+
 
 exports.cancelMeeting = function(req, res) {
 

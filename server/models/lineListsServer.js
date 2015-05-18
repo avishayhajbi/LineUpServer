@@ -65,3 +65,9 @@ exports.getLine = function(req, res) {
     });
 
 };
+
+
+exports.goToApp = function(req, res) { 
+
+
+}

@@ -131,17 +131,17 @@ exports.changeUserName = function(req, res) {
 
 
 exports.notifyUser = function(userId, message) {
-		userdb.getPushToken(userId, function(err, userToken) {
-						if (err) {
-				console.log("forwardMeetings.userdb.find.err@ ", err);
-				return;
-			}
-			if (userToken[0]._doc.pushToken) {
-				var pushToken = userToken[0]._doc.pushToken;
-				sendNotification(message, pushToken);
-				return;
-			}
-		
+	userdb.getPushToken(userId, function(err, userToken) {
+		if (err) {
+			console.log("forwardMeetings.userdb.find.err@ ", err);
+			return;
+		}
+		if (userToken) {
+			var pushToken = userToken.toJSON();
+			sendNotification(message, pushToken);
+			return;
+		}
+
 	});
 
 }
@@ -149,22 +149,32 @@ exports.notifyUser = function(userId, message) {
 
 var sender = new gcm.Sender("AIzaSyCom1Ugg5EdZeBjZSiEpgy5mdzuVklqQok");
 
+		var message = {
+			message: "nir" + " canceled is reservasion at:" + "lineUP",
+			title: "LineUp",
+			key1: "23453456",
+			key2: new Date()
+		};
+
+
+sendNotification(message, "APA91bFEfiIyY3dH0CqxuL6aWlsUEp3tATTsvqrHTjzHDN9zQ8bFXEk-yhaoSb8VnSmWmB2mtSXQMeIYI3Ibdi2iFqmvEpblnqWBlmgBg0OHOH_7KjJJVF8N2Cl8wSTDYnkS2PPrLBNKq3MQhPwLXj5yzj2jsIie5A")
+
 function sendNotification(data, token) {
 
 	var message = new gcm.Message();
 	for (var i in data) {
-		message.addData(i , data[i]);
+		message.addData(i, data[i]);
 		console.log(data[i]);
 	}
-	message.addData("soundname" , 'beep.wav');
-	message.addData("msgcnt" , '3');
-	message.delay_while_idle = 1;	
-	
+	message.addData("soundname", 'beep.wav');
+	message.addData("msgcnt", '3');
+	message.delay_while_idle = 1;
+
 	console.log("notifyUser.token@ ", token);
 	// var registrationIds = [];
 	// registrationIds.push(token);
 	sender.send(message, token, 4, function(err, result) {
-				if (err) {
+		if (err) {
 			console.log("notifyUser.send.err@ ", err);
 			return;
 		}
