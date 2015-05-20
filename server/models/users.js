@@ -129,42 +129,62 @@ exports.changeUserName = function(req, res) {
 
 }
 
+exports.notifyAll= function( type , meetings , delayTime ,lineTitle ,lineId ) {
 
-exports.notifyUser = function(userId, message) {
-	userdb.getPushToken(userId, function(err, userToken) {
-		if (err) {
-			console.log("forwardMeetings.userdb.find.err@ ", err);
-			return;
-		}
-		if (userToken) {
-			var pushToken = userToken.toJSON();
-			sendNotification(message, pushToken);
-			return;
-		}
+		var ids = [];
+		var list = [];
 
-	});
+		for (var i = 0; i < meetings.length; i++) {
+			ids.push(meetings[i].userId);
+			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
+			list.push({
+				message: type,
+				key1: lineTitle,
+				key2: lineId,
+				key3: meetings[i].userId,
+				key4: meetings[i].userName,
+				key5: meetings[i].time
+			});
+		}
+		sendNotifications(ids, list);
+		return meetings;
 
 }
 
 
+exports.sendNotifications = function (ids , list) {
+	;
+	if (!ids || !list) {
+		console.log("no ids in sendNotifications");
+		return;
+	}
+
+	userdb.find({"userId": { $in  : ids} }, function(err , docs){
+			debugger;		
+			if(err || !docs) {
+				console.log("users not in DB to send notification");
+			
+			}
+			for (var i = 0; i < docs.length; i++) {
+				var doc = docs[i].toJSON();
+				for (var j = 0; j < list.length; j++) {
+					if(list[j].key3 === doc.userId)	 {
+						sendNotification(list[j] ,doc.token);
+						}
+				}
+			}
+			
+	});	
+}
+
+
 var sender = new gcm.Sender("AIzaSyCom1Ugg5EdZeBjZSiEpgy5mdzuVklqQok");
-
-		var message = {
-			message: "nir" + " canceled is reservasion at:" + "lineUP",
-			title: "LineUp",
-			key1: "23453456",
-			key2: new Date()
-		};
-
-
-sendNotification(message, "APA91bFEfiIyY3dH0CqxuL6aWlsUEp3tATTsvqrHTjzHDN9zQ8bFXEk-yhaoSb8VnSmWmB2mtSXQMeIYI3Ibdi2iFqmvEpblnqWBlmgBg0OHOH_7KjJJVF8N2Cl8wSTDYnkS2PPrLBNKq3MQhPwLXj5yzj2jsIie5A")
 
 function sendNotification(data, token) {
 
 	var message = new gcm.Message();
 	for (var i in data) {
 		message.addData(i, data[i]);
-		console.log(data[i]);
 	}
 	message.addData("soundname", 'beep.wav');
 	message.addData("msgcnt", '3');
