@@ -2,7 +2,7 @@ var userdb = require('./SchemeModel.js').userdb;
 var gcm = require('node-gcm');
 
 exports.userConnect = function(req, res) {
-
+	
 	var userId = req.query.userId;
 
 	userdb.findOneAndUpdate({
