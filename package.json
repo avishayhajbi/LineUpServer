@@ -19,6 +19,8 @@
     "express-session": "*",
     "mongoose": "*",
     "morgan": "*",
-    "node-gcm" : "*"
+    "node-gcm" : "*",
+    "node-schedule" : "*"
+
   }
 }
