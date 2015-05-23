@@ -1,6 +1,7 @@
 var lineListsServer = require('../models/lineListsServer');
 var meetingServer = require('../models/meetingServer');
 var lineServer = require('../models/lineServer');
+var web = require('../models/web');
 
 var users = require('../models/users');
 
@@ -22,5 +23,12 @@ module.exports = function (app) {
 	app.get('/api/userConnect?', users.userConnect);
     app.get('/api/connectToFB?', users.connectToFaceBook);
     app.get('/api/pushToken?', users.pushToken);
+
+     app.get('/', web.home);
+     app.get('/lineRedirect' , web.lineRedirect);
+
+
 	
 }
+
+
