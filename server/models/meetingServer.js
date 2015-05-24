@@ -7,20 +7,16 @@ var utils = require('../includes/utils.js');
 
 exports.joinLine = function(req, res) {
 
-	if (!req.query.meeting) {
+	if (!req.query.lineId || !req.query.userId  || !!req.query.userName) {
 		console.log('joinLine@  no search query return nothing');
 		res.send(false);
 		return;
 	}
 
-	var meeting = JSON.parse(req.query.meeting);
-	if (!meeting) {
-		console.log('joinLine@  no search query return nothing');
-		res.send(false);
-		return;
-	}
-	console.log("meeting:" + meeting);
-	var lineId = meeting.lineId;
+	var lineId = req.query.lineId;
+	var userId = req.query.userId;
+	var userName = req.query.userName;
+	var meeting = {lineId:lineId,userId:userId,userName:userName};
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
