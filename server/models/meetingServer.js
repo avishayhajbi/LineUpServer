@@ -7,7 +7,7 @@ var utils = require('../includes/utils.js');
 
 exports.joinLine = function(req, res) {
 
-	if (!req.query.lineId || !req.query.userId  || !!req.query.userName) {
+	if (!req.query.lineId || !req.query.userId  || !req.query.userName) {
 		console.log('joinLine@  no search query return nothing');
 		res.send(false);
 		return;
