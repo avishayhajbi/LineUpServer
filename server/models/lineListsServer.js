@@ -3,7 +3,7 @@ var db = require('./SchemeModel.js').db;
 var utils = require('../includes/utils.js');
 
 exports.getlineList = function(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  
   db.getListOfLines(function(err, data) {
     if (err) {
       console.log(err);
@@ -15,8 +15,8 @@ exports.getlineList = function(req, res) {
 };
 
 exports.searchlineList = function(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.query.value === undefined || req.query.value === '' || !req.query.value) {
+  
+  if (!req.query.value) {
     console.log('no search query return nothing');
     res.send(false);
   } else {
@@ -27,7 +27,7 @@ exports.searchlineList = function(req, res) {
 };
 
 exports.getLine = function(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  
   var lineId = req.query.lineId;
   if (!lineId) {
     console.log('getLine@ no search query return nothing');

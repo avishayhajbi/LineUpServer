@@ -154,21 +154,25 @@ exports.confirmMeeting = function(req, res) {
 
 exports.cancelMeeting = function(req, res) {
 
-	var cancel = JSON.parse(req.query.toCancel);
 
-	if (!cancel) {
+
+	if (!req.query.lineId || !req.query.userId || !req.query.time || !req.query.userName) {
 		console.log('cancelMeeting@ no search query return nothing');
 		res.send(false);
 		return;
 	}
 	var lineId = cancel.lineId;
-	delete cancel.lineId;
+	var userId = cancel.userId;
+	var time = cancel.time;
+	var userName = cancel.userName;
+
+	var cancel = {userId:userId,time:time,userName:userName};
 	db.update({
 		"_id": lineId
 	}, {
 		$pull: {
 			meetings: {
-				userId: cancel.userId
+				userId: userId
 			}
 		},
 		$push: {

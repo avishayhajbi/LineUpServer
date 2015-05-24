@@ -25,6 +25,7 @@ module.exports = function (app) {
     app.get('/api/pushToken?', users.pushToken);
 
      app.get('/', web.home);
+     app.get('/help', web.help);
      app.get('/lineRedirect' , web.lineRedirect);
 
 
