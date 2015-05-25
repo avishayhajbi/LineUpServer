@@ -161,10 +161,10 @@ exports.cancelMeeting = function(req, res) {
 		res.send(false);
 		return;
 	}
-	var lineId = cancel.lineId;
-	var userId = cancel.userId;
-	var time = cancel.time;
-	var userName = cancel.userName;
+	var lineId = req.query.lineId;
+	var userId = req.query.userId;
+	var time = req.query.time;
+	var userName = req.query.userName;
 
 	var cancel = {userId:userId,time:time,userName:userName};
 	db.update({
