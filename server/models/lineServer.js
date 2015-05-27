@@ -103,7 +103,8 @@ exports.nextMeeting = function(req, res) {
 					key1: lineId,
 					key2: doc.currentMeeting.time
 				}
-				users.notifyUser(doc.currentMeeting.userId, message);
+				//TODO update this
+				//users.notify(doc.currentMeeting.userId, message);
 
 				var offset = next.time.getTime() - new Date().getTime();
 				if (offset > 5 || offset < -5) {
@@ -330,7 +331,7 @@ exports.endLine = function(req, res) {
 exports.getLineInfo = function(req, res) {
 
 	if (!req.query.lineId || !req.query.lineManagerId) {
-		console.log('no req');
+		console.log('noReq');
 		res.send(false);
 		return;
 	}

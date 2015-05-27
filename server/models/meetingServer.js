@@ -71,7 +71,7 @@ exports.joinLine = function(req, res) {
 					return;
 				}
 				if (data > 0) {
-					users.notify("newUserInLine" ,lineManagerId ,lineId);
+					//users.notify("newUserInLine" ,lineManagerId ,lineId);
 					res.send(meeting.time);
 				} else {
 					res.send(false);
@@ -241,11 +241,7 @@ exports.cancelMeeting = function(req, res) {
 		}
 
 		
-		users.notify("userCancelDmeeting" ,lineManagerId ,lineId);
-		
-
-	
-
+		//users.notify("userCancelDmeeting" ,lineManagerId ,lineId);
 		db.update({
 				"_id": lineId
 			}, {
