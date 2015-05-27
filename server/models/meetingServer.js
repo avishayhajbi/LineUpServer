@@ -38,7 +38,6 @@ exports.joinLine = function(req, res) {
 		meeting.time = line.availableDates[line.day.indexOfDay].nextMeeting;
 		line.meetingsCounter++;
 
-
 		//fowroard meetings
 		line.availableDates[line.day.indexOfDay].nextMeeting = new Date(line.availableDates[line.day.indexOfDay].nextMeeting.getTime() + line.druation * 60000);
 		//if nextmeeting is after line finishes
@@ -72,6 +71,7 @@ exports.joinLine = function(req, res) {
 					return;
 				}
 				if (data > 0) {
+					users.notify("newUserInLine" ,lineManagerId ,lineId);
 					res.send(meeting.time);
 				} else {
 					res.send(false);
@@ -83,7 +83,7 @@ exports.joinLine = function(req, res) {
 };
 
 
-exports.meetingPosition = function(req, res) {
+exports.updateMeetingInfo = function(req, res) {
 	if (!req.query.lineId || !req.query.userId) {
 		console.log("no doc");
 		res.send(false);
@@ -93,7 +93,7 @@ exports.meetingPosition = function(req, res) {
 	var userId = req.query.userId;
 	db.findOne({
 		"_id": lineId
-	}, "meetings", function(err, data) {
+	}, "meetings active druation confirmTime", function(err, data) {
 
 		if (err || !data) {
 			console.log(err);
@@ -110,7 +110,7 @@ exports.meetingPosition = function(req, res) {
 
 		for (var i = 0; i < meetings.length; i++) {
 			if (meetings[i].userId === userId) {
-				res.send(i.toString());
+				res.send({position:i.toString(),time:meetings[i].time,confirmed:meetings[i].confirmed,active:doc.active,druation:doc.druation,confirmTime:doc.confirmTime});
 				return;
 			}
 		}
@@ -154,7 +154,7 @@ exports.confirmMeeting = function(req, res) {
 
 exports.cancelMeeting = function(req, res) {
 
-
+	debugger;
 
 	if (!req.query.lineId || !req.query.userId || !req.query.time || !req.query.userName) {
 		console.log('cancelMeeting@ no search query return nothing');
@@ -241,12 +241,8 @@ exports.cancelMeeting = function(req, res) {
 		}
 
 		
-		users.sendNotifications([lineManagerId] , [{
-			message: "102",
-			key1: doc.title,
-			key2: lineId,
-			key3: lineManagerId
-		}]);
+		users.notify("userCancelDmeeting" ,lineManagerId ,lineId);
+		
 
 	
 

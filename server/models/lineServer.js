@@ -54,14 +54,16 @@ exports.createLine = function(req, res) {
 
 exports.nextMeeting = function(req, res) {
 
-	if (!req.query.lineId) {
+	if (!req.query.lineId || !req.query.lineManagerId) {
 		console.log('no search query return nothing');
 		res.send(false);
 		return;
 	}
 	var lineId = req.query.lineId;
+	var lineManagerId = req.query.lineManagerId;
 	db.findOne({
-		"_id": lineId
+		"_id": lineId,
+		"lineManagerId" : lineManagerId
 	}, function(err, data) {
 
 		if (err || !data) {
@@ -134,7 +136,7 @@ exports.nextMeeting = function(req, res) {
 				} else {
 					// line ended
 					doc.drawMeetings = false;
-					res.send("line ended");
+					res.send("lineEnded");
 				}
 				doc.currentMeeting = null;
 				doc.active = false;
@@ -326,19 +328,22 @@ exports.endLine = function(req, res) {
 
 
 exports.getLineInfo = function(req, res) {
-	if (!req.query.lineId || !req.query.managerId) {
+
+	if (!req.query.lineId || !req.query.lineManagerId) {
 		console.log('no req');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var id = req.query.id;
+	var lineManagerId = req.query.lineManagerId;
 
-	findeOne({
+	
+	db.findOne({
 		"_id": lineId,
-		"lineManagerId": id
+		"lineManagerId": lineManagerId
 	}, function(err, data) {
+		
 		if (err || !data) {
 			console.log(err);
 			res.send(false);

@@ -56,7 +56,9 @@ exports.getLine = function(req, res) {
         endDate: line.availableDates[line.day.indexOfDay].to,
         meeting: line.availableDates[line.day.indexOfDay].nextMeeting,
         title: line.title,
-        meetingDruation: line.druation,
+        druation: line.druation,
+        active: line.active,
+        location:line.location,
         confirmTime: line.confirmTime,
         img: line.ImageURI,
         lineId: lineId

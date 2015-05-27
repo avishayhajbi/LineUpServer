@@ -129,6 +129,15 @@ exports.changeUserName = function(req, res) {
 
 }
 
+exports.notify= function( type  , userId , lineId) {
+
+		var message =  {message: type,
+				key1: lineId
+			};
+
+		sendNotifications([userId], [message]);
+}
+
 exports.notifyAll= function( type , meetings , delayTime ,lineTitle ,lineId ) {
 
 		var ids = [];
