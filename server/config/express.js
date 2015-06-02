@@ -2,12 +2,8 @@ var express = require('express');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var logger = require('morgan');
-
-
 module.exports = function(app, config) {
-
-	app.use(logger('dev'));
+	
 	app.use(bodyParser.urlencoded({
 		extended: true
 	}));

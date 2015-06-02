@@ -285,7 +285,6 @@ exports.postponeLine = function(req, res) {
 
 }
 
-
 exports.endLine = function(req, res) {
 	if (!req.query.lineId || !req.query.managerId) {
 		console.log('no req');
@@ -294,7 +293,7 @@ exports.endLine = function(req, res) {
 	}
 
 	var lineId = req.query.lineId;
-	var id = req.query.id;
+	var id = req.query.managerId;
 
 	findeOne({
 		"_id": lineId,
@@ -321,7 +320,7 @@ exports.endLine = function(req, res) {
 				res.send(false);
 				return;
 			}
-			res.send("lineClosed");
+			res.send(true);
 		});
 	});
 
