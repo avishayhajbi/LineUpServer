@@ -176,7 +176,6 @@ exports.confirmMeeting = function(req, res) {
 
 exports.cancelMeeting = function(req, res) {
 
-	debugger;
 
 	if (!req.query.lineId || !req.query.userId || !req.query.time || !req.query.userName) {
 		console.log('cancelMeeting@ no search query return nothing');
@@ -253,7 +252,7 @@ function forwardMeetings(data) {
 				pushMeetings.push(meetings[i]);
 			}
 		}
-		users.notifyAll("204", pushMeetings, 0, title, lineId);
+		// users.notifyAll("204", pushMeetings, 0, title, lineId);
 		//forward the next avilabledate  becusae deleted one meeting
 		for (var i = 0; i < availableDates.length; i++) {
 			if (utils.getFullDate(availableDates[i].from) === utils.getFullDate(time)) {
