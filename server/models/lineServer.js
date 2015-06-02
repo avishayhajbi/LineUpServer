@@ -230,9 +230,7 @@ exports.whatToDo = function(req, res) {
 				return;
 			}
 		});
-
 	});
-
 }
 
 exports.postponeLine = function(req, res) {
