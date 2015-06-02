@@ -54,7 +54,7 @@ exports.getLine = function(req, res) {
       var lineInfo = {
         startDate: line.availableDates[line.day.indexOfDay].from,
         endDate: line.availableDates[line.day.indexOfDay].to,
-        meeting: line.availableDates[line.day.indexOfDay].nextMeeting,
+        time: line.availableDates[line.day.indexOfDay].nextMeeting,
         title: line.title,
         druation: line.druation,
         active: line.active,

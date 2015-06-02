@@ -113,8 +113,9 @@ exports.updateMeetingInfo = function(req, res) {
 			for (var i = 0; i < meetings.length; i++) {
 
 				if (meetings[i].userId === userId) {
+					var pos = parseInt(i) + 1;
 					var details = {
-						position: i.toString(),
+						position: pos.toString(),
 						time: meetings[i].time,
 						confirmed: meetings[i].confirmed,
 						active: line.active,
