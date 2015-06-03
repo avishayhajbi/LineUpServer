@@ -63,7 +63,7 @@ exports.nextMeeting = function(req, res) {
 	var lineManagerId = req.query.lineManagerId;
 	db.findOne({
 		"_id": lineId,
-		"lineManagerId" : lineManagerId
+		"lineManagerId": lineManagerId
 	}, function(err, data) {
 
 		if (err || !data) {
@@ -78,14 +78,12 @@ exports.nextMeeting = function(req, res) {
 
 		handleNextConfirmations(lineId, doc.title, doc.meetings, doc.confirmTime, doc.druation);
 
-
 		if (!doc.currentMeeting) {
 			console.log("no more meetings");
 			res.send(false);
 			return;
 		}
 		//if there is more meetings
-
 
 		var next = doc.meetings.pop();
 
@@ -98,13 +96,13 @@ exports.nextMeeting = function(req, res) {
 				doc.currentMeeting = next;
 
 				var message = {
-					message: "202",
-					title: "LineUp",
-					key1: lineId,
-					key2: doc.currentMeeting.time
-				}
-				//TODO update this
-				//users.notify(doc.currentMeeting.userId, message);
+						message: "202",
+						title: "LineUp",
+						key1: lineId,
+						key2: doc.currentMeeting.time
+					}
+					//TODO update this
+					//users.notify(doc.currentMeeting.userId, message);
 
 				var offset = next.time.getTime() - new Date().getTime();
 				if (offset > 5 || offset < -5) {
@@ -171,7 +169,6 @@ exports.nextMeeting = function(req, res) {
 
 		});
 
-
 	});
 
 }
@@ -217,7 +214,6 @@ exports.whatToDo = function(req, res) {
 			return;
 		}
 
-
 		db.update({
 			"_id": lineId
 		}, {
@@ -256,18 +252,35 @@ exports.postponeLine = function(req, res) {
 		}
 
 		var doc = data.toJSON();
+		var meetings = doc.meetings;
+		var availableDates = doc.availableDates;
+		var day = doc.day;
 
-		doc.meetings = users.notifyAll("206", doc.meetings, delayTime, doc.title, lineId);
-
-		if (doc.availableDates[doc.day.indexOfDay].nextMeeting) {
-			doc.availableDates[doc.day.indexOfDay].nextMeeting = new Date(doc.availableDates[doc.day.indexOfDay].nextMeeting + delayTime * 60000);
+		var notificationsId =  [];
+		for (var i = 0; i < meetings.length; i++) {
+			if (meetings[i].time.getDate() === availableDates[day.indexOfDay].from.getDate()) {
+				meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
+				notificationsId.push(meetings[i].userId);
+			}
 		}
+		var notifiy =  {
+			notificationsId:notificationsId,
+			lineId :lineId,
+			meesage:"206",
+			title:doc.title
+		}
+		//users.notify(notifiy);
+
+		if (availableDates[day.indexOfDay].nextMeeting) {
+			availableDates[day.indexOfDay].nextMeeting = new Date(availableDates[day.indexOfDay].nextMeeting + delayTime * 60000);
+		}
+	
 		db.update({
 			"_id": lineId,
 			"lineManagerId": id
 		}, {
-			meetings: doc.meetings,
-			availableDates: doc.availableDates
+			meetings: .meetings,
+			availableDates: availableDates
 		}, function(err, data) {
 			if (err || !data || data === 0) {
 				console.log(err);
@@ -277,7 +290,6 @@ exports.postponeLine = function(req, res) {
 			res.send(true);
 
 		});
-
 
 	});
 
@@ -304,8 +316,19 @@ exports.endLine = function(req, res) {
 			return;
 		}
 		var doc = data.toJSON();
+		var meetings = doc.meetings;
 
-		users.notifyAll("206", doc.meetings, 0, doc.title, lineId);
+		var notificationsId = [];
+		for (var i = 0; i < meetings.length; i++) {
+			notificationsId.push(meetings[i].userId);
+		}
+		var notifiy =  {
+			notificationsId:notificationsId,
+			lineId :lineId,
+			meesage:"206",
+			title:doc.title
+		}
+		//user.notifay(notifiy);
 
 		db.update({
 			"_id": lineId
@@ -324,7 +347,6 @@ exports.endLine = function(req, res) {
 
 }
 
-
 exports.getLineInfo = function(req, res) {
 
 	if (!req.query.lineId || !req.query.lineManagerId) {
@@ -336,12 +358,11 @@ exports.getLineInfo = function(req, res) {
 	var lineId = req.query.lineId;
 	var lineManagerId = req.query.lineManagerId;
 
-	
 	db.findOne({
 		"_id": lineId,
 		"lineManagerId": lineManagerId
 	}, function(err, data) {
-		
+
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
@@ -350,8 +371,6 @@ exports.getLineInfo = function(req, res) {
 		res.send(data.toJSON());
 	});
 }
-
-
 
 function addJobs(lineId, jobTimes) {
 	if (!lineId || !jobTimes) return;
@@ -391,8 +410,6 @@ function addJobs(lineId, jobTimes) {
 	}
 }
 
-
-
 function handleNextConfirmations(lineId, title, meetings, confirmTime, druation) {
 
 	if (!lineId || !meetings || meetings.length == 0 || !confirmTime || !druation) return;
@@ -410,16 +427,15 @@ function handleNextConfirmations(lineId, title, meetings, confirmTime, druation)
 
 			users.notifyAll("201", [doc.meetings[i]], 0, doc.title, lineId);
 
-
 			//sechedule check if confirm cron
 			var reConfrim = new Date(now.getTime() + confirmTime * 15000);
-			scheduleWaitConfirm(lineId,  title ,  meetings[i].userId, reConfrim, confirmTime);
+			scheduleWaitConfirm(lineId, title, meetings[i].userId, reConfrim, confirmTime);
 		}
 	}
 
 }
 
-function scheduleWaitConfirm(lineId, title , userId, time, confirmTime) {
+function scheduleWaitConfirm(lineId, title, userId, time, confirmTime) {
 	if (!lineId || !userId || !time || !confirmTime) return;
 	var params = {
 		lineId: lineId,
