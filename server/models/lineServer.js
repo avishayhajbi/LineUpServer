@@ -279,7 +279,7 @@ exports.postponeLine = function(req, res) {
 			"_id": lineId,
 			"lineManagerId": id
 		}, {
-			meetings: .meetings,
+			meetings: meetings,
 			availableDates: availableDates
 		}, function(err, data) {
 			if (err || !data || data === 0) {
