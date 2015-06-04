@@ -76,7 +76,7 @@ exports.nextMeeting = function(req, res) {
 
 		doc.passedMeetings.push(doc.currentMeeting);
 
-		handleNextConfirmations(lineId, doc.title, doc.meetings, doc.confirmTime, doc.druation);
+		// handleNextConfirmations(lineId, doc.title, doc.meetings, doc.confirmTime, doc.druation);
 
 		if (!doc.currentMeeting) {
 			console.log("no more meetings");
@@ -90,17 +90,22 @@ exports.nextMeeting = function(req, res) {
 		if (next) {
 			//yes there is another meeting 
 			var CheckIfNextDay = new Date(new Date(next.time).getTime() - new Date(doc.currentMeeting.time).getTime());
-			//check if the meeting is in the this day of other
+			//check if the meeting is in the this day or other
 			if (CheckIfNextDay.getTime() / 60000 <= doc.druation) {
 				//meeting is in this day 
 				doc.currentMeeting = next;
 
-				var message = {
-						message: "202",
-						title: "LineUp",
-						key1: lineId,
-						key2: doc.currentMeeting.time
-					}
+			var notify =  {
+				ids: doc.currentMeeting.userId,
+				lineId :lineId,
+				type:"202",
+				title:doc.title,
+				to:"one"
+			}
+			
+			users.notify(notify);
+
+
 					//TODO update this
 					//users.notify(doc.currentMeeting.userId, message);
 
@@ -112,7 +117,7 @@ exports.nextMeeting = function(req, res) {
 						doc.availableDates[doc.day.indexOfDay].nextMeeting = new Date(doc.availableDates[doc.day.indexOfDay].nextMeeting + offset * 60000);
 					}
 
-					res.send("next meeting enterd " + " meeting took more/less 5 min notifiy all users");
+					res.send("next meeting enterd " + " meeting took more/less 5 min notify all users");
 				} else {
 					res.send("next meeting enterd");
 				}
@@ -166,11 +171,8 @@ exports.nextMeeting = function(req, res) {
 
 				return;
 			}
-
 		});
-
 	});
-
 }
 
 exports.whatToDo = function(req, res) {
@@ -182,7 +184,7 @@ exports.whatToDo = function(req, res) {
 	}
 	var lineId = req.query.lineId;
 	var answer = req.query.answer; //0 - open ,  1- close;
-	db.fineOne({
+	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
 		if (err || !data) {
@@ -230,19 +232,19 @@ exports.whatToDo = function(req, res) {
 }
 
 exports.postponeLine = function(req, res) {
-	if (!req.query.lineId || !req.query.managerId || !req.query.time) {
+	if (!req.query.lineId || !req.query.lineManagerId || !req.query.time) {
 		console.log('no req');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var id = req.query.id;
+	var lineManagerId = req.query.lineManagerId;
 	var delayTime = req.query.time;
 
-	findeOne({
+	db.findOne({
 		"_id": lineId,
-		"lineManagerId": id
+		"lineManagerId": lineManagerId
 	}, function(err, data) {
 
 		if (err || !data) {
@@ -257,19 +259,26 @@ exports.postponeLine = function(req, res) {
 		var day = doc.day;
 
 		var notificationsId =  [];
+		var usersNewTime =  [];
 		for (var i = 0; i < meetings.length; i++) {
 			if (meetings[i].time.getDate() === availableDates[day.indexOfDay].from.getDate()) {
 				meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
+				usersNewTime.push(meetings[i].time);
 				notificationsId.push(meetings[i].userId);
 			}
 		}
-		var notifiy =  {
-			notificationsId:notificationsId,
-			lineId :lineId,
-			meesage:"206",
-			title:doc.title
+		//notify all users that line postponeLine
+		if (notificationsId.length > 0) {
+			var notify =  {
+				ids:notificationsId,
+				lineId :lineId,
+				type:"204",
+				title:doc.title,
+				to:"singels",
+				usersNewTime:usersNewTime
+			}
+			users.notify(notify);
 		}
-		//users.notify(notifiy);
 
 		if (availableDates[day.indexOfDay].nextMeeting) {
 			availableDates[day.indexOfDay].nextMeeting = new Date(availableDates[day.indexOfDay].nextMeeting + delayTime * 60000);
@@ -296,20 +305,21 @@ exports.postponeLine = function(req, res) {
 }
 
 exports.endLine = function(req, res) {
-	if (!req.query.lineId || !req.query.managerId) {
+
+	if (!req.query.lineId || !req.query.lineManagerId) {
 		console.log('no req');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var id = req.query.managerId;
+	var id = req.query.lineManagerId;
 
-	findeOne({
+	db.findOne({
 		"_id": lineId,
 		"lineManagerId": id
 	}, "meetings drawMeetings active title", function(err, data) {
-
+		
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
@@ -321,14 +331,19 @@ exports.endLine = function(req, res) {
 		var notificationsId = [];
 		for (var i = 0; i < meetings.length; i++) {
 			notificationsId.push(meetings[i].userId);
+
 		}
-		var notifiy =  {
-			notificationsId:notificationsId,
+		//notify all users that line ended
+		if (notificationsId.length > 0) {
+		var notify =  {
+			ids:notificationsId,
 			lineId :lineId,
-			meesage:"206",
-			title:doc.title
+			type:"206",
+			title:doc.title,
+			to:"all"
 		}
-		//user.notifay(notifiy);
+		users.notify(notify);
+		}
 
 		db.update({
 			"_id": lineId
@@ -368,7 +383,10 @@ exports.getLineInfo = function(req, res) {
 			res.send(false);
 			return;
 		}
-		res.send(data.toJSON());
+		var line  = data.toJSON();
+		line.lineId = line._id;
+		delete line._id;
+		res.send(line);
 	});
 }
 
@@ -388,7 +406,7 @@ function addJobs(lineId, jobTimes) {
 				}
 				var line = data.toJSON();
 
-				handleNextConfirmations(lineId, line.title, line.meetings, line.confirmTime, line.druation);
+				// handleNextConfirmations(lineId, line.title, line.meetings, line.confirmTime, line.druation);
 
 				if (line.currentMeeting == "0") {
 					line.currentMeeting = line.meetings.pop();

@@ -2,7 +2,7 @@ var userdb = require('./SchemeModel.js').userdb;
 var gcm = require('node-gcm');
 
 exports.userConnect = function(req, res) {
-	
+
 	var userId = req.query.userId;
 
 	userdb.findOneAndUpdate({
@@ -98,7 +98,6 @@ exports.pushToken = function(req, res) {
 
 }
 
-
 exports.changeUserName = function(req, res) {
 	var userId = req.query.userId;
 	var name = req.query.name;
@@ -124,85 +123,84 @@ exports.changeUserName = function(req, res) {
 			res.send("exist");
 			return;
 		}
-
 	});
-
 }
 
-exports.notify= function( type  , userId , lineId) {
+exports.notify = function(data) {
+	
+	var ids = data.ids;
+	delete data.ids;
 
-		var message =  {message: type,
-				key1: lineId
-			};
-
-		sendNotifications([userId], [message]);
-}
-
-exports.notifyAll= function( type , meetings , delayTime ,lineTitle ,lineId ) {
-
-		var ids = [];
-		var list = [];
-
-		for (var i = 0; i < meetings.length; i++) {
-			ids.push(meetings[i].userId);
-			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
-			list.push({
-				message: type,
-				key1: lineTitle,
-				key2: lineId,
-				key3: meetings[i].userId,
-				key4: meetings[i].userName,
-				key5: meetings[i].time
-			});
-		}
-		sendNotifications(ids, list);
-		return meetings;
-
-}
-
-
-exports.sendNotifications = function (ids , list) {
-	;
-	if (!ids || !list) {
-		console.log("no ids in sendNotifications");
-		return;
-	}
-
-	userdb.find({"userId": { $in  : ids} }, function(err , docs){
-			debugger;		
-			if(err || !docs) {
-				console.log("users not in DB to send notification");
-			
+	userdb.find({
+			"userId": {
+				$in: Array.isArray(ids) ? ids : [ids]
 			}
-			for (var i = 0; i < docs.length; i++) {
-				var doc = docs[i].toJSON();
-				for (var j = 0; j < list.length; j++) {
-					if(list[j].key3 === doc.userId)	 {
-						sendNotification(list[j] ,doc.token);
+		},
+		function(err, docs) {
+				
+			if (err || docs == 0) {
+				console.log("err in save data");
+				return;
+			}
+			if (data.to == "singles") {
+				delete data.to;
+				for (var i = 0; i < docs.length; i++) {
+					var doc = docs[i].toJSON();
+					for (var j = 0; j < ids.length; j++) {
+						if (ids[j] === doc.userId) {
+							sendMessage({
+								usersNewTime: data[j].usersNewTime,
+								token: doc.pushToken,
+								lineId: data.lineId,
+								type: data.type,
+								title:data.title
+							});
 						}
+					}
 				}
+			} else  if (data.to == "all") {
+				delete data.to;
+				data.token = [];
+				for (var i = 0; i < docs.length; i++) {
+					var doc = docs[i].toJSON();
+					for (var j = 0; j < ids.length; j++) {
+						if (ids[j] === doc.userId) {
+							data.token.push(doc.pushToken);
+						}
+					}
+				}
+				sendMessage(data);
+			} else  if (data.to == "one") {
+				delete data.to;
+				var doc = docs[0].toJSON();
+				data.token = doc.pushToken;
+				sendMessage(data);
 			}
-			
-	});	
+		}
+	);
 }
 
 
 var sender = new gcm.Sender("AIzaSyCom1Ugg5EdZeBjZSiEpgy5mdzuVklqQok");
 
-function sendNotification(data, token) {
-
+function sendMessage(data) {
+	var token = data.token;
+	delete data.token;
 	var message = new gcm.Message();
+	
 	for (var i in data) {
-		message.addData(i, data[i]);
+		var key = i;
+		var value = data[i];
+		message.addData(key, value);	
 	}
+
 	message.addData("soundname", 'beep.wav');
 	message.addData("msgcnt", '3');
 	message.delay_while_idle = 1;
 
 	console.log("notifyUser.token@ ", token);
-	// var registrationIds = [];
-	// registrationIds.push(token);
-	sender.send(message, token, 4, function(err, result) {
+
+	sender.send(message, Array.isArray(token) ? token : [token], 4, function(err, result) {
 		if (err) {
 			console.log("notifyUser.send.err@ ", err);
 			return;

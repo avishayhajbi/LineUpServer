@@ -31,6 +31,8 @@ exports.joinLine = function(req, res) {
 		}
 
 		var line = data.toJSON();
+		var lineManagerId = line.lineManagerId;
+		var title = line.title;
 
 		if (!line.drawMeetings) {
 			console.log("noRoom");
@@ -74,7 +76,16 @@ exports.joinLine = function(req, res) {
 					return;
 				}
 				if (data > 0) {
-					//users.notify("newUserInLine" ,lineManagerId ,lineId);
+					
+					//send to manager notification aboutt new user
+					var notifiy =  {
+						notificationsId:lineManagerId,
+						lineId :lineId,
+						meesage:"?",
+						title:title,
+						key1:userName
+					}				
+					//users.notify(notifiy);
 					res.send(meeting.time);
 				} else {
 					res.send(false);
@@ -176,7 +187,6 @@ exports.confirmMeeting = function(req, res) {
 
 exports.cancelMeeting = function(req, res) {
 
-
 	if (!req.query.lineId || !req.query.userId || !req.query.time || !req.query.userName) {
 		console.log('cancelMeeting@ no search query return nothing');
 		res.send(false);
@@ -215,6 +225,17 @@ exports.cancelMeeting = function(req, res) {
 			delete cancel.userId;
 			cancel.lineId = lineId;
 			forwardMeetings(cancel);
+
+			// var notify =  {
+			// 	ids:notificationsId,
+			// 	lineId :lineId,
+			// 	type:"204",
+			// 	title:doc.title,
+			// 	to:"singels",
+			// 	usersNewTime:usersNewTime
+			// }
+			// users.notify(notify);
+
 			res.send(true);
 			return;
 		}

@@ -20,6 +20,7 @@ module.exports = function (app) {
 	app.get('/api/nextMeeting?', lineServer.nextMeeting);
 	app.get('/api/whatToDo?', lineServer.whatToDo);
 	app.get('/api/getLineInfo?', lineServer.getLineInfo);
+	app.get('/api/endLine?', lineServer.endLine);
 
 
 	app.get('/api/userConnect?', users.userConnect);
