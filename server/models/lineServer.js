@@ -286,7 +286,7 @@ exports.postponeLine = function(req, res) {
 	
 		db.update({
 			"_id": lineId,
-			"lineManagerId": id
+			"lineManagerId": lineManagerId
 		}, {
 			meetings: meetings,
 			availableDates: availableDates
