@@ -180,6 +180,13 @@ exports.confirmMeeting = function(req, res) {
 				res.send(false);
 				return;
 			}
+			// var notify =  {
+			// 	lineId :lineId,
+			// 	to:"one",
+			// 	ids: 
+			// }
+			// users.notify()
+
 			res.send(true);
 		});
 
