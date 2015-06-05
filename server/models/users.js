@@ -5,6 +5,7 @@ exports.userConnect = function(req, res) {
 
 	var userId = req.query.userId;
 
+	
 	userdb.findOneAndUpdate({
 		userId: userId
 	}, {
@@ -14,6 +15,7 @@ exports.userConnect = function(req, res) {
 	}, {
 		upsert: true
 	}, function(err, data) {
+		debugger;
 		if (err) {
 			console.log("userConnect.findOneAndUpdate.err@ " + err);
 			res.send(false);

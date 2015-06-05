@@ -13,23 +13,11 @@ exports.createLine = function(req, res) {
 		return;
 	}
 	var line = JSON.parse(req.query.line);
-	var jobTimes = [];
-	var i;
 
-	for (i = 0; i < line.availableDates.length; i++) {
-		line.availableDates[i].from = new Date(line.availableDates[i].from);
-		line.availableDates[i].to = new Date(line.availableDates[i].to);
-		line.availableDates[i].nextMeeting = line.availableDates[i].from;
-		jobTimes.push(new Date(line.availableDates[i].from.getTime() - line.confirmTime * 60000));
-	}
-	line.day = {
-		indexOfDay: 0,
-		maxDays: i
-	};
+	line.nextAvailabeMeeting = line.startDate;
 	line.drawMeetings = true;
 	line.active = false;
 	line.currentMeeting = 0;
-	line.availableDates = utils.sort(line.availableDates, "from");
 	line.meetings = [];
 	line.canceldMeetings = [];
 	line.passedMeetings = [];
@@ -44,14 +32,14 @@ exports.createLine = function(req, res) {
 			return;
 		}
 		var doc = data.toJSON();
-		addJobs(data._id.toString(), jobTimes);
-		console.log("insert new");
+		//TODO improve code for jobs
+		//addJobs(data._id.toString(), jobTimes);
 		res.send(data._id);
-
 	});
 
 };
 
+//im sorry
 exports.nextMeeting = function(req, res) {
 
 	if (!req.query.lineId || !req.query.lineManagerId) {
@@ -72,158 +60,103 @@ exports.nextMeeting = function(req, res) {
 			return
 		}
 
-		var doc = data.toJSON();
-
-		doc.passedMeetings.push(doc.currentMeeting);
+		var line = data.toJSON();
+		line.passedMeetings.push(line.currentMeeting);
 
 		// handleNextConfirmations(lineId, doc.title, doc.meetings, doc.confirmTime, doc.druation);
 
-		if (!doc.currentMeeting) {
+		if (!line.meetings[0].time) {
 			console.log("no more meetings");
-			res.send(false);
-			return;
-		}
-		//if there is more meetings
 
-		var next = doc.meetings.pop();
-
-		if (next) {
-			//yes there is another meeting 
-			var CheckIfNextDay = new Date(new Date(next.time).getTime() - new Date(doc.currentMeeting.time).getTime());
-			//check if the meeting is in the this day or other
-			if (CheckIfNextDay.getTime() / 60000 <= doc.druation) {
-				//meeting is in this day 
-				doc.currentMeeting = next;
-
-			var notify =  {
-				ids: doc.currentMeeting.userId,
-				lineId :lineId,
-				type:"202",
-				title:doc.title,
-				to:"one"
+			if (new Date() - line.endDate < line.druation) {
+				console.log("no room for meetings closing line");
+				line.drawMeetings = false;
+				line.active = false;
+				res.send("noMoreMeetingsLineClosed");	
 			}
-			
-			users.notify(notify);
-
-
-					//TODO update this
-					//users.notify(doc.currentMeeting.userId, message);
-
-				var offset = next.time.getTime() - new Date().getTime();
-				if (offset > 5 || offset < -5) {
-					doc.meetings = users.notifyAll("204", doc.meetings, delayTime, doc.title, lineId);
-
-					if (doc.availableDates[doc.day.indexOfDay].nextMeeting) {
-						doc.availableDates[doc.day.indexOfDay].nextMeeting = new Date(doc.availableDates[doc.day.indexOfDay].nextMeeting + offset * 60000);
-					}
-
-					res.send("next meeting enterd " + " meeting took more/less 5 min notify all users");
-				} else {
-					res.send("next meeting enterd");
-				}
-			} else {
-				//metting is tomorw close the line for now 
-				doc.currentMeeting = null;
-				doc.day.indexOfDay++;
-				doc.active = false;
-				res.send("line done for today will start again next day");
+			else {
+				//ask manager if to close to line or wait to new users
+				res.send("noMoreMeetingsAskWhatToDo");
 			}
 
 		} else {
-			//no more meetings in list 
-			var offset = new Date(doc.availableDates[doc.day.indexOfDay].to - new Date());
-			if (offset < doc.druation) {
-				//no more room for meetings 
-				if (doc.day.indexOfDay < doc.day.maxDays - 1) {
-					// line finish for today
-					res.send("line done for today");
-				} else {
-					// line ended
-					doc.drawMeetings = false;
-					res.send("lineEnded");
+			//if there is more meetings
+			var next = line.meetings.pop();
+			if (next) {
+				line.currentMeeting = next;
+				//nofity next user to enter line
+				var notify = {
+						ids: line.currentMeeting.userId,
+						lineId: lineId,
+						type: "?",
+						title: line.title,
+						to: "one"
+					}
+				//users.notify(notify);
+				//nofity next next user if exist is meeting getting closer
+				if (line.meetings[1].time) {
+					var notify = {
+							ids: line.meetings[1].userId,
+							lineId: lineId,
+							type: "?",
+							title: line.title,
+							to: "one"
+						}
+						//users.notify(notify);
 				}
-				doc.currentMeeting = null;
-				doc.active = false;
+				//check if meeting took more than 5 minutes if yes notify all
+				//and change time
+				var offset = next.time.getTime() - new Date().getTime();
+				if (offset >= 5 || offset <= 5) {
 
-			} else {
-				//TODO ask admon what to do
-				res.send("askWhatToDo");
+					var notificationsId = [];
+					var usersNewTime = [];
+					for (var i = 0; i < line.meetings.length; i++) {
+						notificationsId.push(line.meetings[i].userId);
+						line.meetings[i].time = new Date(line.meetings[i].time.getTime() - offset * 60000);
+						usersNewTime.push(line.meetings[i].time);
+
+					}
+					if (line.nextAvailabeMeeting != null) {
+						line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() - offset * 60000);
+					} else {
+						var newTime = new Date(line.nextAvailabeMeeting.getTime() - offset * 60000);
+						if (newTime <= line.endDate) {
+							line.nextAvailabeMeeting = newTime;
+							line.drawMeetings = true;
+						}
+					}
+
+					if (notificationsId.length > 0) {
+						//notify all user after canceld line that line shorted
+						var notify = {
+							ids: notificationsId,
+							lineId: lineId,
+							type: "?",
+							title: line.title,
+							to: "singels",
+							usersNewTime: usersNewTime
+						}
+						users.notify(notify);
+					}
+				}
+				res.send(true);
 			}
-
 		}
-
 		db.update({
 			"_id": lineId
 		}, {
-			availableDates: doc.availableDates,
-			currentMeeting: doc.currentMeeting,
-			active: doc.active,
-			drawMeetings: doc.drawMeetings,
-			day: doc.day,
-			meetings: doc.meetings,
-			passedMeetings: doc.passedMeetings
+			currentMeeting: line.currentMeeting,
+			active: line.active,
+			drawMeetings: line.drawMeetings,
+			meetings: line.meetings,
+			passedMeetings: line.passedMeetings,
+			nextAvailabeMeeting:line.nextAvailabeMeeting,
+
 		}, {
 			upsert: true
 		}, function(err, data) {
-
 			if (err || !data || data === 0) {
-				console.log(err);
-
-				return;
-			}
-		});
-	});
-}
-
-exports.whatToDo = function(req, res) {
-
-	if (!req.query.lineId || !req.query.answer) {
-		console.log('no req');
-		res.send(false);
-		return;
-	}
-	var lineId = req.query.lineId;
-	var answer = req.query.answer; //0 - open ,  1- close;
-	db.findOne({
-		"_id": lineId
-	}, function(err, data) {
-		if (err || !data) {
-			console.log(err);
-			res.send(false);
-			return;
-		}
-		var doc = data.toJSON();
-		if (answer === "0") {
-			res.send("301"); //line will stay open
-			return;
-		} else if (answer === "1") {
-			if (doc.day.indexOfDay < doc.day.maxDays - 1) {
-				// line finish for today
-				res.send("302"); //line finish for today
-				return;
-			} else {
-				// line ended
-				doc.drawMeetings = false;
-				res.send("303"); // line ende
-			}
-			doc.currentMeeting = null;
-			doc.active = false;
-
-		} else {
-			console.log("no answer");
-			res.send("304");
-			// no answer
-			return;
-		}
-
-		db.update({
-			"_id": lineId
-		}, {
-			drawMeetings: doc.drawMeetings,
-			currentMeeting: doc.currentMeeting,
-			active: doc.active
-		}, function(err, data) {
-			if (err || !data || data == 0) {
 				console.log(err);
 				return;
 			}
@@ -232,6 +165,7 @@ exports.whatToDo = function(req, res) {
 }
 
 exports.postponeLine = function(req, res) {
+
 	if (!req.query.lineId || !req.query.lineManagerId || !req.query.time) {
 		console.log('no req');
 		res.send(false);
@@ -255,41 +189,43 @@ exports.postponeLine = function(req, res) {
 
 		var doc = data.toJSON();
 		var meetings = doc.meetings;
-		var availableDates = doc.availableDates;
-		var day = doc.day;
 
-		var notificationsId =  [];
-		var usersNewTime =  [];
+		var notificationsId = [];
+		var usersNewTime = [];
 		for (var i = 0; i < meetings.length; i++) {
-			if (meetings[i].time.getDate() === availableDates[day.indexOfDay].from.getDate()) {
-				meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
-				usersNewTime.push(meetings[i].time);
-				notificationsId.push(meetings[i].userId);
-			}
+			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
+			usersNewTime.push(meetings[i].time);
+			notificationsId.push(meetings[i].userId);
 		}
+
 		//notify all users that line postponeLine
 		if (notificationsId.length > 0) {
-			var notify =  {
-				ids:notificationsId,
-				lineId :lineId,
-				type:"204",
-				title:doc.title,
-				to:"singels",
-				usersNewTime:usersNewTime
+			var notify = {
+				ids: notificationsId,
+				lineId: lineId,
+				type: "204",
+				title: doc.title,
+				to: "singels",
+				usersNewTime: usersNewTime
 			}
 			users.notify(notify);
 		}
 
-		if (availableDates[day.indexOfDay].nextMeeting) {
-			availableDates[day.indexOfDay].nextMeeting = new Date(availableDates[day.indexOfDay].nextMeeting + delayTime * 60000);
+		if (doc.nextAvailabeMeeting !== null) {
+			doc.nextAvailabeMeeting = new Date(doc.nextAvailabeMeeting + delayTime * 60000);
+			if (doc.nextAvailabeMeeting > doc.endDate) {
+				doc.nextAvailabeMeeting = null;
+				doc.drawMeetings = false;
+			}
 		}
-	
+
 		db.update({
 			"_id": lineId,
 			"lineManagerId": lineManagerId
 		}, {
 			meetings: meetings,
-			availableDates: availableDates
+			drawMeetings: doc.drawMeetings,
+			nextAvailabeMeeting: doc.nextAvailabeMeeting
 		}, function(err, data) {
 			if (err || !data || data === 0) {
 				console.log(err);
@@ -319,7 +255,7 @@ exports.endLine = function(req, res) {
 		"_id": lineId,
 		"lineManagerId": id
 	}, "meetings drawMeetings active title", function(err, data) {
-		
+
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
@@ -335,14 +271,14 @@ exports.endLine = function(req, res) {
 		}
 		//notify all users that line ended
 		if (notificationsId.length > 0) {
-		var notify =  {
-			ids:notificationsId,
-			lineId :lineId,
-			type:"206",
-			title:doc.title,
-			to:"all"
-		}
-		users.notify(notify);
+			var notify = {
+				ids: notificationsId,
+				lineId: lineId,
+				type: "206",
+				title: doc.title,
+				to: "all"
+			}
+			users.notify(notify);
 		}
 
 		db.update({
@@ -383,7 +319,7 @@ exports.getLineInfo = function(req, res) {
 			res.send(false);
 			return;
 		}
-		var line  = data.toJSON();
+		var line = data.toJSON();
 		line.lineId = line._id;
 		delete line._id;
 		res.send(line);

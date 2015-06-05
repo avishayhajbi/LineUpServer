@@ -3,8 +3,8 @@ var db = require('./SchemeModel.js').db;
 var utils = require('../includes/utils.js');
 
 exports.getlineList = function(req, res) {
-  
-  db.getListOfLines(function(err, data) {
+
+  db.find({}, "title location", function(err, data) {
     if (err) {
       console.log(err);
       res.send(false);
@@ -15,19 +15,25 @@ exports.getlineList = function(req, res) {
 };
 
 exports.searchlineList = function(req, res) {
-  
+
   if (!req.query.value) {
     console.log('no search query return nothing');
     res.send(false);
-  } else {
-    db.findLineByTitle(req.query.value, function(err, data) {
-      res.send(data);
-    });
+    return;
   }
+
+  var re = new RegExp(name, "i");
+
+  db.find({
+    title: re
+  }, "title location", function(err, data) {
+    res.send(data);
+  });
+
 };
 
 exports.getLine = function(req, res) {
-  
+
   var lineId = req.query.lineId;
   if (!lineId) {
     console.log('getLine@ no search query return nothing');
@@ -35,9 +41,9 @@ exports.getLine = function(req, res) {
     return;
   }
   db.findOne({
-      "_id": lineId},
-      "availableDates title active drawMeetings day druation location confirmTime"
-    ,
+      "_id": lineId
+    },
+    "availableDates title active drawMeetings day druation location confirmTime",
     function(err, data) {
 
       if (err || !data) {
@@ -52,13 +58,13 @@ exports.getLine = function(req, res) {
         res.send("noRoom");
       }
       var lineInfo = {
-        startDate: line.availableDates[line.day.indexOfDay].from,
-        endDate: line.availableDates[line.day.indexOfDay].to,
-        time: line.availableDates[line.day.indexOfDay].nextMeeting,
+        startDate: line.startDate,
+        endDate: line.endDate,
+        time: line.nextAvailabeMeeting,
         title: line.title,
         druation: line.druation,
         active: line.active,
-        location:line.location,
+        location: line.location,
         confirmTime: line.confirmTime,
         img: line.ImageURI,
         lineId: lineId
@@ -68,9 +74,3 @@ exports.getLine = function(req, res) {
     });
 
 };
-
-
-exports.goToApp = function(req, res) { 
-
-
-}

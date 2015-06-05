@@ -40,28 +40,23 @@ exports.joinLine = function(req, res) {
 			return;
 		}
 		meeting.confirmed = false;
-		meeting.time = line.availableDates[line.day.indexOfDay].nextMeeting;
+		meeting.time = line.nextAvailabeMeeting;
 		line.meetingsCounter++;
 
-		//fowroard meetings
-		line.availableDates[line.day.indexOfDay].nextMeeting = new Date(line.availableDates[line.day.indexOfDay].nextMeeting.getTime() + line.druation * 60000);
+		line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() + line.druation * 60000);
 		//if nextmeeting is after line finishes
-		if (line.availableDates[line.day.indexOfDay].nextMeeting > line.availableDates[line.day.indexOfDay].to) {
-			//yes it is forward one day 
-			line.availableDates[line.day.indexOfDay].nextMeeting = null;
-			line.day.indexOfDay++;
-			//if this is the last day
-			if (line.day.indexOfDay === line.day.maxDays) {
-				line.drawMeetings = false;
-			}
+		if (line.nextAvailabeMeeting > line.endDate) {
+			line.nextAvailabeMeeting = null;
+			drawMeetings = false
+			line.meetingsCounter--;
 		}
+
 		delete meeting.lineId;
 		db.update({
 				"_id": lineId
 			}, {
 				$set: {
-					availableDates: line.availableDates,
-					day: line.day,
+					nextAvailabeMeeting: line.nextAvailabeMeeting,
 					drawMeetings: line.drawMeetings,
 					meetingsCounter: line.meetingsCounter
 				},
@@ -76,16 +71,17 @@ exports.joinLine = function(req, res) {
 					return;
 				}
 				if (data > 0) {
-					
+
 					//send to manager notification aboutt new user
-					var notifiy =  {
-						notificationsId:lineManagerId,
-						lineId :lineId,
-						meesage:"?",
-						title:title,
-						key1:userName
-					}				
-					//users.notify(notifiy);
+					var notifiy = {
+							notificationsId: lineManagerId,
+							lineId: lineId,
+							type: "managerNewUser",
+							to: "one",
+							title: title,
+							userName: userName
+						}
+						//users.notify(notifiy);
 					res.send(meeting.time);
 				} else {
 					res.send(false);
@@ -98,71 +94,66 @@ exports.joinLine = function(req, res) {
 
 exports.updateMeetingInfo = function(req, res) {
 	if (!req.query.lineId || !req.query.userId) {
-		console.log("no doc");
+		console.log("no req");
 		res.send(false);
 		return;
 	}
 	var lineId = req.query.lineId;
 	var userId = req.query.userId;
 	db.findOne({
-			"_id": lineId
-		}, function(err, data) {
+		"_id": lineId
+	}, function(err, data) {
 
-			if (err || !data) {
-				console.log(err);
-				res.send(false);
-				return;
-			}
-			var line = data.toJSON();
-			if (!line) {
-				console.log("no line");
-				res.send(false);
-				return;
-			}
-			var meetings = line.meetings;
-
-			for (var i = 0; i < meetings.length; i++) {
-
-				if (meetings[i].userId === userId) {
-					var pos = parseInt(i) + 1;
-					var details = {
-						position: pos.toString(),
-						time: meetings[i].time,
-						confirmed: meetings[i].confirmed,
-						active: line.active,
-						druation: line.druation,
-						confirmTime: line.confirmTime,
-						lineId:line._id,
-						title:line.title,
-						location:line.location
-					}
-					for (var j = 0; j < line.availableDates.length; j++) {
-						if (line.availableDates[j].from.getDate() == meetings[i].time.getDate()) {
-							details.startDate = line.availableDates[j].from;
-							details.endDate = line.availableDates[j].to;
-						}
-					}
-					
-					res.send(details);
-					return;
-				}		
-			}
+		if (err || !data) {
+			console.log(err);
 			res.send(false);
+			return;
 		}
-	);
+		var line = data.toJSON();
+		if (!line) {
+			console.log("no line");
+			res.send(false);
+			return;
+		}
+		var meetings = line.meetings;
+
+		for (var i = 0; i < meetings.length; i++) {
+			if (meetings[i].userId === userId) {
+				var pos = parseInt(i) + 1;
+				var details = {
+					position: pos.toString(),
+					time: meetings[i].time,
+					confirmed: meetings[i].confirmed,
+					active: line.active,
+					druation: line.druation,
+					confirmTime: line.confirmTime,
+					lineId: line._id,
+					title: line.title,
+					location: line.location,
+					startDate: line.startDate,
+					endDate: line.endDate
+				}
+				res.send(details);
+				return;
+			}
+		}
+		res.send(false);
+	});
 }
 
 exports.confirmMeeting = function(req, res) {
 
-	if (!req.query.lineId || !req.query.userId) {
+	if (!req.query.lineId || !req.query.userId || !req.query.userName) {
 		console.log("no request");
 		res.send(false);
 		return;
 	}
 	var lineId = req.query.lineId;
 	var userId = req.query.userId;
+	var userName = req.query.userName;
 
-	db.update({
+
+	db.findOneAndUpdate({
 			"_id": lineId,
 			meetings: {
 				$elemMatch: {
@@ -174,21 +165,30 @@ exports.confirmMeeting = function(req, res) {
 				'meetings.$.confirmed': true
 			}
 		},
-		function(err, data) {
+		function(err, data) { 
+			debugger;
 			if (err || !data || data === 0) {
 				console.log(err);
 				res.send(false);
 				return;
 			}
-			// var notify =  {
-			// 	lineId :lineId,
-			// 	to:"one",
-			// 	ids: 
-			// }
-			// users.notify()
+			var line =  data.toJSON();
+			//notify manager meeting confirmed
+			var notify = {
+				ids: line.lineManagerId,
+				lineId: lineId,
+				type: "?",
+				title: line.title,
+				to: "one",
+				userName: cancel.userName
+			}
 
+			users.notify(notify);
 			res.send(true);
+
 		});
+
+
 
 };
 
@@ -201,7 +201,7 @@ exports.cancelMeeting = function(req, res) {
 	}
 	var lineId = req.query.lineId;
 	var userId = req.query.userId;
-	var time = req.query.time;
+	var time = new Date(req.query.time);
 	var userName = req.query.userName;
 
 	var cancel = {
@@ -209,108 +209,91 @@ exports.cancelMeeting = function(req, res) {
 		time: time,
 		userName: userName
 	};
-	db.update({
+
+	db.findOne({
 		"_id": lineId
-	}, {
-		$pull: {
-			meetings: {
-				userId: userId
-			}
-		},
-		$push: {
-			canceldMeetings: cancel
-		}
-
 	}, function(err, data) {
-
-		if (err) {
-			console.log("cancelMeeting.update.err@ ", err);
+		if (err || !data) {
+			console.log("cancelMeeting.find.err@ ", err);
 			res.send(false);
 			return;
 		}
-		if (data > 0) {
-			delete cancel.userId;
-			cancel.lineId = lineId;
-			forwardMeetings(cancel);
-
-			// var notify =  {
-			// 	ids:notificationsId,
-			// 	lineId :lineId,
-			// 	type:"204",
-			// 	title:doc.title,
-			// 	to:"singels",
-			// 	usersNewTime:usersNewTime
-			// }
-			// users.notify(notify);
-
-			res.send(true);
-			return;
+		var line = data.toJSON();
+		line.meetingsCounter--;
+		var notificationsId = [];
+		var usersNewTime = [];
+		for (var i = 0; i < line.meetings.length; i++) {
+			if (line.meetings[i].time > cancel.time) {
+				notificationsId.push(line.meetings[i].userId);
+				line.meetings[i].time = new Date(line.meetings[i].time.getTime() - line.druation * 60000);
+				usersNewTime.push(line.meetings[i].time);
+			}
 		}
-		res.send(false);
+		if (line.nextAvailabeMeeting  != null) {
+			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() - line.druation * 60000);
+		}
+		else {
+			var newTime = new Date(line.nextAvailabeMeeting.getTime() - line.druation * 60000);
+			if (newTime <= line.endDate){
+				line.nextAvailabeMeeting = newTime;
+				line.drawMeetings = true;
+			}
+		}
+		
+
+		if (notificationsId.length > 0) {
+			//notify all user after canceld line that line shorted
+			var notify = {
+				ids: notificationsId,
+				lineId: lineId,
+				type: "?",
+				title: line.title,
+				to: "singels",
+				usersNewTime: usersNewTime
+			}
+			users.notify(notify);
+			//notify manager user canceled
+			var notify2 = {
+				ids: line.lineManagerId,
+				lineId: lineId,
+				type: "?",
+				title: line.title,
+				to: "one",
+				userName: cancel.userName
+			}
+			users.notify(notify2);
+		}
+
+		db.update({
+			"_id": lineId
+		}, {
+			meetingsCounter: line.meetingsCounter,
+			nextAvailabeMeeting:line.nextAvailabeMeeting,
+			drawMeetings:line.drawMeetings,
+			$pull: {
+				meetings: {
+					userId: userId
+				}
+			},
+			$push: {
+				canceldMeetings: cancel
+			}
+
+		}, function(err, data) {
+
+			if (err) {
+				console.log("cancelMeeting.update.err@ ", err);
+				res.send(false);
+				return;
+			}
+			if (data > 0) {
+				res.send(true);
+				return;
+			}
+			res.send(false);
+
+		});
 
 	});
 
 };
-
-function forwardMeetings(data) {
-	var time = new Date(data.time);
-	var lineId = data.lineId;
-	db.findOne({
-		"_id": lineId
-	}, "meetings waitingAproval druation availableDates title lineManagerId", function(err, result) {
-
-		if (err || !result) {
-			console.log("forwardMeetings.find.err@ ", err);
-			return;
-		}
-		var doc = result.toJSON();
-		var title = doc.title;
-		var meetings = doc.meetings;
-		var availableDates = doc.availableDates;
-		var druation = doc.druation;
-		var lineManagerId = doc.lineManagerId;
-		//go on all meetings and forward them in the druation time
-
-		var pushMeetings = [];
-		for (var i = 0; i < meetings.length; i++) {
-			//if day is the same and canceld time was before this meeting 
-			//forward the meeting in druation time and notify user
-			if (utils.getFullDate(meetings[i].time) === utils.getFullDate(time) && utils.getFullTime(time) < utils.getFullTime(meetings[i].time)) {
-				meetings[i].time = new Date(meetings[i].time.getTime() - druation * 60000);
-				pushMeetings.push(meetings[i]);
-			}
-		}
-		// users.notifyAll("204", pushMeetings, 0, title, lineId);
-		//forward the next avilabledate  becusae deleted one meeting
-		for (var i = 0; i < availableDates.length; i++) {
-			if (utils.getFullDate(availableDates[i].from) === utils.getFullDate(time)) {
-				if (availableDates[i].nextMeeting === null) {
-					availableDates[i].nextMeeting = availableDates[i].to;
-				} else {
-					availableDates[i].nextMeeting = new Date(availableDates[i].nextMeeting.getTime() - druation * 60000)
-				}
-				break;
-			}
-		}
-
-		//users.notify("userCancelDmeeting" ,lineManagerId ,lineId);
-		db.update({
-				"_id": lineId
-			}, {
-				$set: {
-					availableDates: availableDates
-				},
-				$inc: {
-					meetingsCounter: -1
-				}
-			},
-			function(err, data) {
-
-				if (err) {
-					console.log("forwardMeetings.update.err@ ", err);
-					return;
-				}
-				console.log(data);
-			});
-	});
-}

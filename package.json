@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "0.12.x",
-    "npm": "2.5.x"
+    "npm": "2.10.x"
   },
   "author": "nir winkler",
   "license": "ISC",
@@ -17,10 +17,11 @@
     "cookie-parser": "*",
     "express": "*",
     "express-session": "*",
-    "mongoose": "3.8.x",
+    "mongoose": "*",
     "morgan": "*",
     "node-gcm" : "*",
-    "node-schedule" : "*"
-
+    "node-schedule" : "*",
+    "passport": "*",
+    "passport-local": "*"
   }
 }

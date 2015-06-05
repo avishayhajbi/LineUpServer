@@ -1,6 +1,9 @@
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var passport = require('passport');
+var expressSession = require('express-session');
+
 
 module.exports = function(app, config) {
 	
@@ -8,6 +11,11 @@ module.exports = function(app, config) {
 		extended: true
 	}));
 	app.use(bodyParser.json());
+		app.use(expressSession({
+		secret: 'unicorn'
+	}));
+	app.use(passport.initialize());
+	app.use(passport.session());
 	app.use(allowCrossDomain);
 }
 

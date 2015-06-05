@@ -2,10 +2,10 @@ var lineListsServer = require('../models/lineListsServer');
 var meetingServer = require('../models/meetingServer');
 var lineServer = require('../models/lineServer');
 var web = require('../models/web');
-
 var users = require('../models/users');
+var auth = require('./auth');
 
-module.exports = function (app) {
+module.exports = function(app) {
 
 	app.get('/api/lineList?', lineListsServer.getlineList);
 	app.get('/api/searchLineList?', lineListsServer.searchlineList);
@@ -18,22 +18,25 @@ module.exports = function (app) {
 
 	app.get('/api/createLine?', lineServer.createLine);
 	app.get('/api/nextMeeting?', lineServer.nextMeeting);
-	app.get('/api/whatToDo?', lineServer.whatToDo);
 	app.get('/api/getLineInfo?', lineServer.getLineInfo);
 	app.get('/api/postponeLine?', lineServer.postponeLine);
 	app.get('/api/endLine?', lineServer.endLine);
 
-
 	app.get('/api/userConnect?', users.userConnect);
-    app.get('/api/connectToFB?', users.connectToFaceBook);
-    app.get('/api/pushToken?', users.pushToken);
+	app.get('/api/connectToFB?', users.connectToFaceBook);
+	app.get('/api/pushToken?', users.pushToken);
 
-     app.get('/', web.home);
-     app.get('/help', web.help);
-     app.get('/lineRedirect' , web.lineRedirect);
+	app.post('/api/logIn?', auth.authenticateLogin);
+	app.post('/api/signUp?', auth.authenticateSignUp);
+	app.post('/api/logOut?', function(req, res) {
+		req.logout();
+		res.end();
+	});
 
+	app.get('/', web.home);
+	app.get('/help', web.help);
+	app.get('/lineRedirect', web.lineRedirect);
 
 	
+
 }
-
-
