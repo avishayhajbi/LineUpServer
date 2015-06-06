@@ -1,39 +1,6 @@
 var userdb = require('./SchemeModel.js').userdb;
 var gcm = require('node-gcm');
 
-exports.userConnect = function(req, res) {
-
-	var userId = req.query.userId;
-
-	
-	userdb.findOneAndUpdate({
-		userId: userId
-	}, {
-		$setOnInsert: {
-			userId: userId
-		}
-	}, {
-		upsert: true
-	}, function(err, data) {
-		debugger;
-		if (err) {
-			console.log("userConnect.findOneAndUpdate.err@ " + err);
-			res.send(false);
-			return;
-		}
-
-		if (data.isNew) {
-			res.send("newUser");
-			return;
-		} else {
-			res.send("exist");
-			return;
-		}
-
-	});
-
-}
-
 exports.connectToFaceBook = function(req, res) {
 
 	var userId = req.query.userId;
@@ -98,34 +65,6 @@ exports.pushToken = function(req, res) {
 
 	});
 
-}
-
-exports.changeUserName = function(req, res) {
-	var userId = req.query.userId;
-	var name = req.query.name;
-
-	userdb.findOneAndUpdate({
-		userId: userId
-	}, {
-		$set: {
-			name: name
-		}
-	}, {
-		upsert: true
-	}, function(err, data) {
-		if (err) {
-			console.log("pushToken.findOneAndUpdate.err@ " + err);
-			res.send(false);
-			return;
-		}
-		if (data.isNew) {
-			res.send("signed");
-			return;
-		} else {
-			res.send("exist");
-			return;
-		}
-	});
 }
 
 exports.notify = function(data) {

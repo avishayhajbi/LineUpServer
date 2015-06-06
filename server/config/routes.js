@@ -22,13 +22,12 @@ module.exports = function(app) {
 	app.get('/api/postponeLine?', lineServer.postponeLine);
 	app.get('/api/endLine?', lineServer.endLine);
 
-	app.get('/api/userConnect?', users.userConnect);
 	app.get('/api/connectToFB?', users.connectToFaceBook);
 	app.get('/api/pushToken?', users.pushToken);
 
-	app.post('/api/logIn?', auth.authenticateLogin);
-	app.post('/api/signUp?', auth.authenticateSignUp);
-	app.post('/api/logOut?', function(req, res) {
+	app.post('/api/logIn', auth.authenticateLogin);
+	app.post('/api/signUp', auth.authenticateSignUp);
+	app.post('/api/logOut', function(req, res) {
 		req.logout();
 		res.end();
 	});

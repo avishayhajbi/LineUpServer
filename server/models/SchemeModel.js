@@ -3,7 +3,11 @@ var mongoose = require('mongoose');
 //line data scheme and model
 //user
 var dataSchema = mongoose.model('Lines', {
-	location: String,
+	location: [{
+		latitude: String,
+		longitude: String,
+		address: String
+	}],
 	title: String,
 	druation: Number,
 	confirmTime: String,
@@ -49,7 +53,7 @@ var userSchema = mongoose.model('Users', {
 	password: String,
 	pushToken: String,
 	email: String,
-	acvtiveLines: [String],
+	activeLines: [String],
 	passedLines: [String],
 	activeMeetings: [String],
 	passedMeetings: [String]

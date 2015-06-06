@@ -264,6 +264,7 @@ exports.cancelMeeting = function(req, res) {
 			users.notify(notify2);
 		}
 
+		
 		db.update({
 			"_id": lineId
 		}, {
@@ -287,6 +288,7 @@ exports.cancelMeeting = function(req, res) {
 				return;
 			}
 			if (data > 0) {
+				moveMeetingToPassed(lineId , userId);
 				res.send(true);
 				return;
 			}
@@ -297,3 +299,20 @@ exports.cancelMeeting = function(req, res) {
 	});
 
 };
+
+
+function moveMeetingToPassed(lineId, userId) {
+
+	userdb.update({
+		"_id": userId
+	}, {
+		$pull: {
+			activeMeetings: lineId
+		},
+		$push: {
+			passedMeetings: lineId
+		}
+	}, function(err, data) {
+		//TODO wirte this
+	});
+}

@@ -1,11 +1,8 @@
 {
   "name": "LineUpServer",
   "version": "1.0.0",
-  "description": "",
+  "description": "LineUpServer",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "engines": {
     "node": "0.12.x",
     "npm": "2.10.x"
@@ -13,14 +10,15 @@
   "author": "nir winkler",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.1.0",
     "body-parser": "*",
     "cookie-parser": "*",
     "express": "*",
     "express-session": "*",
     "mongoose": "*",
     "morgan": "*",
-    "node-gcm" : "*",
-    "node-schedule" : "*",
+    "node-gcm": "*",
+    "node-schedule": "*",
     "passport": "*",
     "passport-local": "*"
   }

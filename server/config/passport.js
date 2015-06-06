@@ -8,16 +8,14 @@ var crypto = require('crypto');
 module.exports = function() {
   passport.use('login', new LocalStrategy(
     function(username, password, done) {
-      var userToken = randomToken();
-      userdb.findOneAndUpdate({
+      
+      userdb.findOne({
         username: username
-      }, {
-        userToken: userToken
-      }, {
-        new: true
-      }).exec(function(err, user) {
-
+      }, "activeMeetings acvtiveLines passedLines passedMeetings password", function(err, user) {
+        user = user.toJSON();
+        
         if (user && isValidPassword(user, password)) {
+          delete user.password;
           return done(null, user);
         } else {
           return done(null, false);
@@ -32,17 +30,16 @@ module.exports = function() {
       passReqToCallback: true
     },
     function(req, username, password, done) {
-      debugger;
-      var userToken = randomToken();
+      
+      //var userToken = randomToken();
       // find a user in Mongo with provided userName
       userdb.findOneAndUpdate({
         'username': username
       }, {
-        userToken: userToken
       }, {
         new: true
       }, function(err, user) {
-        debugger;
+        
         // In case of any error return
         if (err) {
           console.log('Error in SignUp: ' + err);
@@ -59,8 +56,7 @@ module.exports = function() {
           // set the user's local credentials
           newUser.username = username;
           newUser.password = createHash(password);
-          newUser.email = req.query.email;
-          newUser.userToken = userToken;
+          newUser.email = req.body.email;
 
           // save the user
           newUser.save(function(err) {
@@ -95,17 +91,17 @@ module.exports = function() {
   })
 }
 
-function randomToken() {
-  try {
-    var buf = crypto.randomBytes(48);
+// function randomToken() {
+//   try {
+//     var buf = crypto.randomBytes(48);
 
-  } catch (ex) {
-    console.log("no more token");
-    return null;
-  }
-  return buf.toString('hex');
+//   } catch (ex) {
+//     console.log("no more token");
+//     return null;
+//   }
+//   return buf.toString('hex');
 
-}
+// }
 
 var isValidPassword = function(user, password) {
   return bcrypt.compareSync(password, user.password);

@@ -26,10 +26,10 @@ exports.authenticateLogin = function(req, res, next) {
 };
 
 exports.authenticateSignUp = function(req, res, next) {
-  debugger;
-  req.body.username = req.body.params.username.toLowerCase();
+ 
+  req.body.username = req.body.username.toLowerCase();
   var auth = passport.authenticate('signup', function(err, user) {
-    debugger;
+   
     if (err) {
       return next(err);
     }

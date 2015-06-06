@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var db = require('./SchemeModel.js').db;
+var userdb = require('./SchemeModel.js').userdb;
 var utils = require('../includes/utils.js');
 var users = require('./users.js');
 var cron = require('node-schedule');
@@ -23,8 +24,11 @@ exports.createLine = function(req, res) {
 	line.passedMeetings = [];
 	line.meetingsCounter = 0;
 
+	if (!line.lineManagerId) {
+		res.send(false);
+		console.log("no user id in this line please signed in");
+	}
 	db.create(line, function(err, data) {
-
 		console.log("insert new");
 		if (err || !data) {
 			console.log(err);
@@ -32,9 +36,39 @@ exports.createLine = function(req, res) {
 			return;
 		}
 		var doc = data.toJSON();
-		//TODO improve code for jobs
-		//addJobs(data._id.toString(), jobTimes);
-		res.send(data._id);
+		var lineId = doc._id.toJSON();
+
+
+		var notify = {
+			ids: line.lineManagerId,
+			lineId: lineId,
+			type: "?",
+			title: line.title,
+			to: "one"
+		}
+
+		var timeToNotify = new Date(line.startDate.getTime() - (line.druation + line.confrimTime) * 60000);
+		var timeToNotify2 = new Date(line.startDate.getTime() - 5 * 60000);
+		//notify manager before line begings
+		scheduleJob(notify, timeToNotify);
+		//notify manager 5 minutes befure line begings
+		scheduleJob(notify, timeToNotify2);
+
+		userdb.update({
+			"_id": line.lineManagerId
+		}, {
+			$push: {
+				activeLines: lineId
+			}
+		}, function(err, data) {
+
+			if (err || !data || data <= 0) {
+				res.send(false);
+				console.log("failed to save");
+				return;
+			}
+			res.send(lineId);
+		})
 	});
 
 };
@@ -63,7 +97,6 @@ exports.nextMeeting = function(req, res) {
 		var line = data.toJSON();
 		line.passedMeetings.push(line.currentMeeting);
 
-		// handleNextConfirmations(lineId, doc.title, doc.meetings, doc.confirmTime, doc.druation);
 
 		if (!line.meetings[0].time) {
 			console.log("no more meetings");
@@ -72,9 +105,8 @@ exports.nextMeeting = function(req, res) {
 				console.log("no room for meetings closing line");
 				line.drawMeetings = false;
 				line.active = false;
-				res.send("noMoreMeetingsLineClosed");	
-			}
-			else {
+				res.send("noMoreMeetingsLineClosed");
+			} else {
 				//ask manager if to close to line or wait to new users
 				res.send("noMoreMeetingsAskWhatToDo");
 			}
@@ -92,8 +124,8 @@ exports.nextMeeting = function(req, res) {
 						title: line.title,
 						to: "one"
 					}
-				//users.notify(notify);
-				//nofity next next user if exist is meeting getting closer
+					//users.notify(notify);
+					//nofity next next user if exist is meeting getting closer
 				if (line.meetings[1].time) {
 					var notify = {
 							ids: line.meetings[1].userId,
@@ -138,6 +170,8 @@ exports.nextMeeting = function(req, res) {
 							usersNewTime: usersNewTime
 						}
 						users.notify(notify);
+						// check if to send confirmation request
+						sendConfirmation(lineId);
 					}
 				}
 				res.send(true);
@@ -151,7 +185,7 @@ exports.nextMeeting = function(req, res) {
 			drawMeetings: line.drawMeetings,
 			meetings: line.meetings,
 			passedMeetings: line.passedMeetings,
-			nextAvailabeMeeting:line.nextAvailabeMeeting,
+			nextAvailabeMeeting: line.nextAvailabeMeeting,
 
 		}, {
 			upsert: true
@@ -161,6 +195,9 @@ exports.nextMeeting = function(req, res) {
 				return;
 			}
 		});
+		if (!line.drawMeetings) {
+			moveLineToPassed(lineId, line.lineManagerId);
+		}
 	});
 }
 
@@ -192,6 +229,7 @@ exports.postponeLine = function(req, res) {
 
 		var notificationsId = [];
 		var usersNewTime = [];
+		// interat on meetings and create new time for them
 		for (var i = 0; i < meetings.length; i++) {
 			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
 			usersNewTime.push(meetings[i].time);
@@ -209,6 +247,8 @@ exports.postponeLine = function(req, res) {
 				usersNewTime: usersNewTime
 			}
 			users.notify(notify);
+			//check if to send conformation 
+			sendConfirmation(lineId);
 		}
 
 		if (doc.nextAvailabeMeeting !== null) {
@@ -217,6 +257,10 @@ exports.postponeLine = function(req, res) {
 				doc.nextAvailabeMeeting = null;
 				doc.drawMeetings = false;
 			}
+		}
+
+		if (!doc.drawMeetings) {
+			moveLineToPassed(lineId, lineManagerId);
 		}
 
 		db.update({
@@ -281,6 +325,9 @@ exports.endLine = function(req, res) {
 			users.notify(notify);
 		}
 
+		debugger;
+		moveLineToPassed(lineId, id);
+
 		db.update({
 			"_id": lineId
 		}, {
@@ -326,103 +373,60 @@ exports.getLineInfo = function(req, res) {
 	});
 }
 
-function addJobs(lineId, jobTimes) {
-	if (!lineId || !jobTimes) return;
-	for (var i = 0; i < jobTimes.length; i++) {
-		// schedule every time a day start event
-		cron.scheduleJob(lineId, jobTimes[i], function() {
-			db.findOne({
-				"_id": lineId
-			}, function(err, data) {
 
-				if (err || !data) {
-					console.log(err);
-					res.send(false);
-					return
-				}
-				var line = data.toJSON();
 
-				// handleNextConfirmations(lineId, line.title, line.meetings, line.confirmTime, line.druation);
+function scheduleJob(notify, time) {
 
-				if (line.currentMeeting == "0") {
-					line.currentMeeting = line.meetings.pop();
-
-					db.update({
-						"_id": lineId
-					}, {
-						currentMeeting: line.currentMeeting,
-						$pop: {
-							mettings: -1
-						}
-					}, function(err, data) {
-						//TODO check if data save
-					});
-				}
-
-			});
-		});
-	}
+	cron.scheduleJob(notify, time, function() {
+		users.notify(notify);
+		sendConfirmation(notify.lineId);
+	});
 }
 
-function handleNextConfirmations(lineId, title, meetings, confirmTime, druation) {
+function sendConfirmation(lineId) {
 
-	if (!lineId || !meetings || meetings.length == 0 || !confirmTime || !druation) return;
-
-	var now = new Date();
-	var tz_correction_minutes = now.getTimezoneOffset() - meetings[0].time.getTimezoneOffset();
-	now.setMinutes(now.getMinutes() + tz_correction_minutes);
-
-	var toConfirm = new Date(now.getTime() + confirmTime * 60000);
-
-	for (var i = 0; i < meetings.length; i++) {
-		var top = new Date(meetings[i].time.getTime() + druation * 60000);
-		var bottom = new Date(meetings[i].time.getTime() - druation * 60000);
-		if (toConfirm >= bottom && toConfirm <= top && !meetings[i].confirmed) {
-
-			users.notifyAll("201", [doc.meetings[i]], 0, doc.title, lineId);
-
-			//sechedule check if confirm cron
-			var reConfrim = new Date(now.getTime() + confirmTime * 15000);
-			scheduleWaitConfirm(lineId, title, meetings[i].userId, reConfrim, confirmTime);
-		}
-	}
-
-}
-
-function scheduleWaitConfirm(lineId, title, userId, time, confirmTime) {
-	if (!lineId || !userId || !time || !confirmTime) return;
-	var params = {
-		lineId: lineId,
-		userId: userId
-	};
-	cron.scheduleJob(params, time, function() {
-
-		db.findOne({
-			"_id": params.lineId
-		}, "meetings confirmTime druation", function(err, data) {
-
+	db.findOne({
+			"_id": lineId
+		}, "meetings druation confirmTime title", function(err, data) {
 			if (err || !data) {
-				console.log(err);
-				res.send(false);
-				return
+				console.log("cant send confirmation");
+				return;
 			}
-			var doc = data.toJSON();
-			var meeting;
-			for (var i = 0; i < doc.meetings.length; i++) {
-				if (doc.meetings[i].userId == userId) {
-					meeting = doc.meetings[i];
-					break;
-				}
+			var line = data.toJSON();
+			var meetings = line.meetings;
+			var notificationsId = [];
+			var usersNewTime = [];
+			//intarte all users and send confirmation to them
+			for (var i = 0; i < meetings.length; i++) {
+				if (!meetings[i].confrimed && (meetings[i].time - new Date() <= confirmTime)) {
+					notificationsId.push(meetings[i].userId);
+					usersNewTime.push(meetings[i].time);
+						}
+					var notify = {
+						ids: notificationsId,
+						lineId: lineId,
+						type: "?",
+						usersNewTime:usersNewTime,
+						title: line.title,
+						to: "singels"
+					}
+					users.notify(notify);			
 			}
-			if (!meeting) return;
-			if (!meeting.confirmed && new Date(meeting.time.getTime() - doc.confirmTime * 30000) > new Date()) {
-				newTime = new Date(new Date().getTime() + doc.confirmTime * 15000);
+	});
+}
 
-				users.notifyAll("201", [doc.meetings[i]], 0, title, lineId);
+function moveLineToPassed(lineId, userId) {
 
-				scheduleWaitConfirm(params.lineId, params.userId, newTime, doc.timeConfirm);
-			}
-
-		});
+	userdb.update({
+		"_id": userId
+	}, {
+		$pull: {
+			activeLines: lineId
+		},
+		$push: {
+			passedLines: lineId
+		}
+	}, function(err, data) {
+		//TODO wirte this
 	});
 }
