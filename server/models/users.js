@@ -36,6 +36,32 @@ exports.connectToFaceBook = function(req, res) {
 
 }
 
+exports.updateLists = function(req, res) {
+	var userId = req.query.userId;
+
+	userdb.findOne({
+		userId: userId
+	} , "activeLines passedLines activeMeetings passedMeetings", function(err, data) {
+
+		if (err || !data) {
+			console.log("updateLists.findOne.err@ " + err);
+			res.send(false);
+			return;
+		}
+		if (data) {
+			res.send(data);
+			return;
+		}
+		res.send(false);
+	});
+
+}
+
+
+
+
+
+
 exports.pushToken = function(req, res) {
 	var userId = req.query.userId;
 	var pushToken = req.query.pushToken;

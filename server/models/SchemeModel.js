@@ -56,10 +56,10 @@ var userSchema = mongoose.model('Users', {
 	password: String,
 	pushToken: String,
 	email: String,
-	activeLines: [String],
-	passedLines: [String],
-	activeMeetings: [String],
-	passedMeetings: [String]
+	activeLines: [{title:String,lineId:String}],
+	passedLines: [{title:String,lineId:String}],
+	activeMeetings: [{title:String,lineId:String}],
+	passedMeetings: [{title:String,lineId:String}]
 });
 
 var userdb = mongoose.model('Users', userSchema);

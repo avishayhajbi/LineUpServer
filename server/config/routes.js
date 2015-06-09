@@ -23,6 +23,7 @@ module.exports = function(app) {
 	app.get('/api/endLine?', lineServer.endLine);
 
 	app.get('/api/connectToFB?', users.connectToFaceBook);
+	app.get('/api/updateLists?', users.updateLists);
 	app.get('/api/pushToken?', users.pushToken);
 
 	app.post('/api/logIn', auth.authenticateLogin);

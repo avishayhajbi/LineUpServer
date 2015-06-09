@@ -17,7 +17,7 @@ exports.createLine = function(req, res) {
 	line.nextAvailabeMeeting = line.startDate;
 	line.drawMeetings = true;
 	line.active = false;
-line.currentMeeting = 0;
+	line.currentMeeting = 0;
 	line.meetings = [];
 	line.canceldMeetings = [];
 	line.passedMeetings = [];
@@ -37,13 +37,14 @@ line.currentMeeting = 0;
 		}
 		var line = data.toJSON();
 		var lineId = line._id.toJSON();
+		var title = line.title;
 
 
 		var notify = {
 			ids: line.lineManagerId,
 			lineId: lineId,
 			type: "?",
-			title: line.title,
+			title: title,
 			to: "one"
 		}
 
@@ -58,7 +59,7 @@ line.currentMeeting = 0;
 			"_id": line.lineManagerId
 		}, {
 			$push: {
-				activeLines: lineId
+				activeLines: {lineId:lineId,title:title}
 			}
 		}, function(err, data) {
 
@@ -95,6 +96,7 @@ exports.nextMeeting = function(req, res) {
 		}
 
 		var line = data.toJSON();
+		var title = line.title;
 		line.passedMeetings.push(line.currentMeeting);
 
 
@@ -121,7 +123,7 @@ exports.nextMeeting = function(req, res) {
 						ids: line.currentMeeting.userId,
 						lineId: lineId,
 						type: "?",
-						title: line.title,
+						title: title,
 						to: "one"
 					}
 					//users.notify(notify);
@@ -131,7 +133,7 @@ exports.nextMeeting = function(req, res) {
 							ids: line.meetings[1].userId,
 							lineId: lineId,
 							type: "?",
-							title: line.title,
+							title: title,
 							to: "one"
 						}
 						//users.notify(notify);
@@ -165,7 +167,7 @@ exports.nextMeeting = function(req, res) {
 							ids: notificationsId,
 							lineId: lineId,
 							type: "?",
-							title: line.title,
+							title: title,
 							to: "singels",
 							usersNewTime: usersNewTime
 						}
@@ -196,7 +198,7 @@ exports.nextMeeting = function(req, res) {
 			}
 		});
 		if (!line.drawMeetings) {
-			moveLineToPassed(lineId, line.lineManagerId);
+			moveLineToPassed(lineId,title, line.lineManagerId);
 		}
 	});
 }
@@ -225,6 +227,7 @@ exports.postponeLine = function(req, res) {
 		}
 
 		var line = data.toJSON();
+		var title = line.title;
 		var meetings = line.meetings;
 
 		var notificationsId = [];
@@ -242,7 +245,7 @@ exports.postponeLine = function(req, res) {
 				ids: notificationsId,
 				lineId: lineId,
 				type: "204",
-				title: line.title,
+				title: title,
 				to: "singels",
 				usersNewTime: usersNewTime
 			}
@@ -260,7 +263,7 @@ exports.postponeLine = function(req, res) {
 		}
 
 		if (!line.drawMeetings) {
-			moveLineToPassed(lineId, lineManagerId);
+			moveLineToPassed(lineId,title, lineManagerId);
 		}
 
 		db.update({
@@ -306,6 +309,7 @@ exports.endLine = function(req, res) {
 			return;
 		}
 		var doc = data.toJSON();
+		var title = doc.title;
 		var meetings = doc.meetings;
 
 		var notificationsId = [];
@@ -319,13 +323,13 @@ exports.endLine = function(req, res) {
 				ids: notificationsId,
 				lineId: lineId,
 				type: "206",
-				title: doc.title,
+				title: title,
 				to: "all"
 			}
 			users.notify(notify);
 		}
 
-		moveLineToPassed(lineId, id);
+		moveLineToPassed(lineId,title, id);
 
 		db.update({
 			"_id": lineId
@@ -392,6 +396,7 @@ function sendConfirmation(lineId) {
 				return;
 			}
 			var line = data.toJSON();
+			var title = line.title;
 			var meetings = line.meetings;
 			var notificationsId = [];
 			var usersNewTime = [];
@@ -405,8 +410,8 @@ function sendConfirmation(lineId) {
 						ids: notificationsId,
 						lineId: lineId,
 						type: "?",
-						usersNewTime:usersNewTime,
-						title: line.title,
+						usersNewTime:usesetCurrentrsNewTime,
+						title: title,
 						to: "singels"
 					}
 					users.notify(notify);			
@@ -414,16 +419,16 @@ function sendConfirmation(lineId) {
 	});
 }
 
-function moveLineToPassed(lineId, userId) {
+function moveLineToPassed(lineId, title, userId) {
 
 	userdb.update({
 		"_id": userId
 	}, {
 		$pull: {
-			activeLines: lineId
+			activeLines: {lineId:lineId}
 		},
 		$push: {
-			passedLines: lineId
+			passedLines: {lineId:lineId,title:title}
 		}
 	}, function(err, data) {
 		//TODO wirte this

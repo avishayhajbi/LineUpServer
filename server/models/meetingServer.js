@@ -301,6 +301,63 @@ exports.cancelMeeting = function(req, res) {
 
 };
 
+exports.getMyMeetingList = function(req, res) {
+
+	if (!req.query.userId) {
+		console.log('cancelMeeting@ no search query return nothing');
+		res.send(false);
+		return;
+	}
+	
+	var userId = req.query.userId;
+
+	userdb.findOne({
+		"_id": userId
+	}, function(err, data) {
+		if (err || !data) {
+			console.log("cancelMeeting.find.err@ ", err);
+			res.send(false);
+			return;
+		}
+		var line = data.toJSON();
+		
+		db.find({
+			"_id": lineId
+		}, {
+			meetingsCounter: line.meetingsCounter,
+			nextAvailabeMeeting:line.nextAvailabeMeeting,
+			drawMeetings:line.drawMeetings,
+			$pull: {
+				meetings: {
+					userId: userId
+				}
+			},
+			$push: {
+				canceldMeetings: cancel
+			}
+
+		}, function(err, data) {
+
+			if (err) {
+				console.log("cancelMeeting.update.err@ ", err);
+				res.send(false);
+				return;
+			}
+			if (data > 0) {
+				moveMeetingToPassed(lineId , userId);
+				res.send(true);
+				return;
+			}
+			res.send(false);
+
+		});
+
+	});
+
+};
+
+
+
 
 function moveMeetingToPassed(lineId, userId) {
 
