@@ -14,11 +14,10 @@ exports.createLine = function(req, res) {
 		return;
 	}
 	var line = JSON.parse(req.query.line);
-
 	line.nextAvailabeMeeting = line.startDate;
 	line.drawMeetings = true;
 	line.active = false;
-	line.currentMeeting = 0;
+line.currentMeeting = 0;
 	line.meetings = [];
 	line.canceldMeetings = [];
 	line.passedMeetings = [];
@@ -29,14 +28,15 @@ exports.createLine = function(req, res) {
 		console.log("no user id in this line please signed in");
 	}
 	db.create(line, function(err, data) {
+		
 		console.log("insert new");
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
 			return;
 		}
-		var doc = data.toJSON();
-		var lineId = doc._id.toJSON();
+		var line = data.toJSON();
+		var lineId = line._id.toJSON();
 
 
 		var notify = {
@@ -47,7 +47,7 @@ exports.createLine = function(req, res) {
 			to: "one"
 		}
 
-		var timeToNotify = new Date(line.startDate.getTime() - (line.druation + line.confrimTime) * 60000);
+		var timeToNotify = new Date(line.startDate.getTime() - (line.druation + line.confirmTime) * 60000);
 		var timeToNotify2 = new Date(line.startDate.getTime() - 5 * 60000);
 		//notify manager before line begings
 		scheduleJob(notify, timeToNotify);
@@ -224,8 +224,8 @@ exports.postponeLine = function(req, res) {
 			return;
 		}
 
-		var doc = data.toJSON();
-		var meetings = doc.meetings;
+		var line = data.toJSON();
+		var meetings = line.meetings;
 
 		var notificationsId = [];
 		var usersNewTime = [];
@@ -242,7 +242,7 @@ exports.postponeLine = function(req, res) {
 				ids: notificationsId,
 				lineId: lineId,
 				type: "204",
-				title: doc.title,
+				title: line.title,
 				to: "singels",
 				usersNewTime: usersNewTime
 			}
@@ -251,15 +251,15 @@ exports.postponeLine = function(req, res) {
 			sendConfirmation(lineId);
 		}
 
-		if (doc.nextAvailabeMeeting !== null) {
-			doc.nextAvailabeMeeting = new Date(doc.nextAvailabeMeeting + delayTime * 60000);
-			if (doc.nextAvailabeMeeting > doc.endDate) {
-				doc.nextAvailabeMeeting = null;
-				doc.drawMeetings = false;
+		if (line.nextAvailabeMeeting !== null) {
+			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting + delayTime * 60000);
+			if (line.nextAvailabeMeeting > line.endDate) {
+				line.nextAvailabeMeeting = null;
+				line.drawMeetings = false;
 			}
 		}
 
-		if (!doc.drawMeetings) {
+		if (!line.drawMeetings) {
 			moveLineToPassed(lineId, lineManagerId);
 		}
 
@@ -268,8 +268,8 @@ exports.postponeLine = function(req, res) {
 			"lineManagerId": lineManagerId
 		}, {
 			meetings: meetings,
-			drawMeetings: doc.drawMeetings,
-			nextAvailabeMeeting: doc.nextAvailabeMeeting
+			drawMeetings: line.drawMeetings,
+			nextAvailabeMeeting: line.nextAvailabeMeeting
 		}, function(err, data) {
 			if (err || !data || data === 0) {
 				console.log(err);
@@ -325,7 +325,6 @@ exports.endLine = function(req, res) {
 			users.notify(notify);
 		}
 
-		debugger;
 		moveLineToPassed(lineId, id);
 
 		db.update({

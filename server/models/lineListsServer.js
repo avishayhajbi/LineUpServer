@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var db = require('./SchemeModel.js').db;
 var utils = require('../includes/utils.js');
 
-exports.getlineList = function(req, res) {
+exports.getRandomlineList = function(req, res) {
 
   db.find({}, "title location", function(err, data) {
     if (err) {
@@ -22,7 +22,7 @@ exports.searchlineList = function(req, res) {
     return;
   }
 
-  var re = new RegExp(name, "i");
+  var re = new RegExp(req.query.value, "i");
 
   db.find({
     title: re
@@ -37,7 +37,7 @@ exports.getLine = function(req, res) {
   var lineId = req.query.lineId;
   if (!lineId) {
     console.log('getLine@ no search query return nothing');
-    res.send(false);
+    res.send("noSuchLine");
     return;
   }
   db.findOne({

@@ -80,7 +80,7 @@ exports.notify = function(data) {
 		function(err, docs) {
 				
 			if (err || docs == 0) {
-				console.log("err in save data");
+				console.log("err in notify");
 				return;
 			}
 			if (data.to == "singles") {
@@ -88,7 +88,7 @@ exports.notify = function(data) {
 				for (var i = 0; i < docs.length; i++) {
 					var doc = docs[i].toJSON();
 					for (var j = 0; j < ids.length; j++) {
-						if (ids[j] === doc.userId) {
+						if (ids[j] === doc.userId && doc.pushToken) {
 							sendMessage({
 								usersNewTime: data[j].usersNewTime,
 								token: doc.pushToken,
@@ -105,7 +105,7 @@ exports.notify = function(data) {
 				for (var i = 0; i < docs.length; i++) {
 					var doc = docs[i].toJSON();
 					for (var j = 0; j < ids.length; j++) {
-						if (ids[j] === doc.userId) {
+						if (ids[j] === doc.userId && doc.pushToken) {
 							data.token.push(doc.pushToken);
 						}
 					}
@@ -114,8 +114,10 @@ exports.notify = function(data) {
 			} else  if (data.to == "one") {
 				delete data.to;
 				var doc = docs[0].toJSON();
+				if(doc.pushToken) {
 				data.token = doc.pushToken;
 				sendMessage(data);
+				}
 			}
 		}
 	);

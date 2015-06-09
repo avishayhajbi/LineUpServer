@@ -35,7 +35,7 @@ exports.authenticateSignUp = function(req, res, next) {
     }
     if (!user) {
       res.send({
-        success: false
+        success: "userExist"
       })
     }
     req.logIn(user, function(err) {

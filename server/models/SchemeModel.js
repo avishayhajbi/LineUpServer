@@ -13,7 +13,10 @@ var dataSchema = mongoose.model('Lines', {
 	confirmTime: String,
 	manuall: Boolean,
 	active: Boolean,
+	nextAvailabeMeeting:String,
 	lineManagerId: String,
+	startDate: Date,
+	endDate: Date,
 	drawMeetings: Boolean,
 	meetingsCounter: Number,
 	currentMeeting: {

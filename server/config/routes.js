@@ -7,14 +7,14 @@ var auth = require('./auth');
 
 module.exports = function(app) {
 
-	app.get('/api/lineList?', lineListsServer.getlineList);
+	app.get('/api/getRandomlineList?', lineListsServer.getRandomlineList);
 	app.get('/api/searchLineList?', lineListsServer.searchlineList);
 	app.get('/api/getLine?', lineListsServer.getLine);
 
 	app.get('/api/joinLine?', meetingServer.joinLine);
-	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
-	app.get('/api/updateMeetingInfo?', meetingServer.updateMeetingInfo);
+	app.get('/api/getMeetingInfo?', meetingServer.getMeetingInfo);
 	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
+	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
 
 	app.get('/api/createLine?', lineServer.createLine);
 	app.get('/api/nextMeeting?', lineServer.nextMeeting);
@@ -35,6 +35,7 @@ module.exports = function(app) {
 	app.get('/', web.home);
 	app.get('/help', web.help);
 	app.get('/lineRedirect', web.lineRedirect);
+	app.get('/meetingRedirect', web.meetingRedirect);
 
 	
 

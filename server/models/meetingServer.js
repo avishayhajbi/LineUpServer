@@ -92,7 +92,8 @@ exports.joinLine = function(req, res) {
 
 };
 
-exports.updateMeetingInfo = function(req, res) {
+exports.getMeetingInfo = function(req, res) {
+
 	if (!req.query.lineId || !req.query.userId) {
 		console.log("no req");
 		res.send(false);
@@ -166,7 +167,7 @@ exports.confirmMeeting = function(req, res) {
 			}
 		},
 		function(err, data) { 
-			debugger;
+			
 			if (err || !data || data === 0) {
 				console.log(err);
 				res.send(false);

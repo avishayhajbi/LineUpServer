@@ -12,7 +12,8 @@ module.exports = function() {
       userdb.findOne({
         username: username
       }, "activeMeetings acvtiveLines passedLines passedMeetings password", function(err, user) {
-        user = user.toJSON();
+        
+
         
         if (user && isValidPassword(user, password)) {
           delete user.password;
