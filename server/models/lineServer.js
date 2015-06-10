@@ -4,7 +4,6 @@ var userdb = require('./SchemeModel.js').userdb;
 var utils = require('../includes/utils.js');
 var users = require('./users.js');
 var cron = require('node-schedule');
-var combineHandler = require('./combineHandler.js');
 
 exports.createLine = function(req, res) {
 

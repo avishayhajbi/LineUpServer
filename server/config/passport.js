@@ -14,8 +14,10 @@ module.exports = function() {
       }, "activeMeetings activeLines passedLines passedMeetings password username", function(err, user) {
         
         if (user && isValidPassword(user, password)) {
-          delete user.password;
-          return done(null, user);
+          
+          var returnUser = user.toJSON();
+          delete returnUser.password;
+          return done(null, returnUser);
         } else {
           return done(null, false);
         }
@@ -64,6 +66,7 @@ module.exports = function() {
               throw err;
             }
             console.log('User Registration succesful');
+            delete newUser.password;
             return done(null, newUser);
           });
         }

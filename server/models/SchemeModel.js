@@ -6,14 +6,15 @@ var dataSchema = mongoose.model('Lines', {
 	location: [{
 		latitude: String,
 		longitude: String,
-		address: String
+		address: String,
+		_id: false
 	}],
 	title: String,
 	druation: Number,
 	confirmTime: String,
 	manuall: Boolean,
 	active: Boolean,
-	nextAvailabeMeeting:String,
+	nextAvailabeMeeting: Date,
 	lineManagerId: String,
 	startDate: Date,
 	endDate: Date,
@@ -23,25 +24,29 @@ var dataSchema = mongoose.model('Lines', {
 		userId: String,
 		userName: String,
 		confirmed: Boolean,
-		time: Date
+		time: Date,
+		_id: false
 	},
 	meetings: [{
 		userId: String,
 		userName: String,
 		confirmed: Boolean,
-		time: Date
+		time: Date,
+		_id: false
 	}],
 	canceldMeetings: [{
 		userId: String,
 		userName: String,
 		confirmed: Boolean,
-		time: Date
+		time: Date,
+		_id: false
 	}],
 	passedMeetings: [{
 		userId: String,
 		userName: String,
 		confirmed: Boolean,
-		time: Date
+		time: Date,
+		_id: false
 	}]
 });
 
@@ -56,10 +61,26 @@ var userSchema = mongoose.model('Users', {
 	password: String,
 	pushToken: String,
 	email: String,
-	activeLines: [{title:String,lineId:String}],
-	passedLines: [{title:String,lineId:String}],
-	activeMeetings: [{title:String,lineId:String}],
-	passedMeetings: [{title:String,lineId:String}]
+	activeLines: [{
+		title: String,
+		lineId: String,
+		_id:false
+	}],
+	passedLines: [{
+		title: String,
+		lineId: String,
+		_id:false
+	}],
+	activeMeetings: [{
+		title: String,
+		lineId: String,
+		_id:false
+	}],
+	passedMeetings: [{
+		title: String,
+		lineId: String,
+		_id:false
+	}]
 });
 
 var userdb = mongoose.model('Users', userSchema);
