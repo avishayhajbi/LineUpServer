@@ -6,7 +6,7 @@ var userdb = require('./SchemeModel.js').userdb;
 var utils = require('../includes/utils.js');
 
 exports.joinLine = function(req, res) {
-	
+
 	if (!req.query.lineId || !req.query.userId || !req.query.userName) {
 		console.log('joinLine@  no search query return nothing');
 		res.send(false);
@@ -17,17 +17,16 @@ exports.joinLine = function(req, res) {
 	var userId = req.query.userId;
 	var userName = req.query.userName;
 	var meeting = {
-		lineId: lineId,
 		userId: userId,
 		userName: userName
 	};
-	
+
 
 
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-			
+
 		if (err || !data) {
 			console.log("joinLine.findOne.err@ ", err);
 			res.send(false);
@@ -38,17 +37,24 @@ exports.joinLine = function(req, res) {
 		var lineManagerId = line.lineManagerId;
 		var title = line.title;
 
-		if (!line.drawMeetings) {
+		if (!line.drawMeetings || line.nextAvailabeMeeting == null) {
 			console.log("noRoom");
 			res.send("noRoom");
 			return;
 		}
+		for (var i = 0; i < line.meetings.length; i++) {
+			if (line.meetings[i].userId == userId) {
+				console.log("userSignedIn");
+				res.send("userSignedIn");
+				return;
+			}
+		}
 		meeting.confirmed = false;
 		meeting.time = line.nextAvailabeMeeting;
 		line.meetingsCounter++;
-		if (line.nextAvailabeMeeting) {
-			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() + line.druation * 60000);
-		}
+
+		line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() + line.druation * 60000);
+
 		//if nextmeeting is after line finishes
 		if (line.nextAvailabeMeeting > line.endDate) {
 			line.nextAvailabeMeeting = null;
@@ -58,20 +64,20 @@ exports.joinLine = function(req, res) {
 
 
 		var details = {
-					position: line.meetingsCounter.toString(),
-					time: meeting.time,
-					confirmed: meeting.confirmed,
-					active: line.active,
-					druation: line.druation,
-					confirmTime: line.confirmTime,
-					lineId: line._id,
-					title: line.title,
-					location: line.location,
-					startDate: line.startDate,
-					endDate: line.endDate
-				}
+			position: line.meetingsCounter.toString(),
+			time: meeting.time,
+			confirmed: meeting.confirmed,
+			active: line.active,
+			druation: line.druation,
+			confirmTime: line.confirmTime,
+			lineId: lineId,
+			title: title,
+			location: line.location,
+			startDate: line.startDate,
+			endDate: line.endDate
+		}
 
-		delete meeting.lineId;
+
 		db.update({
 				"_id": lineId
 			}, {
@@ -85,32 +91,48 @@ exports.joinLine = function(req, res) {
 				}
 			},
 			function(err, data) {
-			
+
 				if (err || !data) {
 					console.log("joinLine.findOne.err@ ", err);
 					res.send(false);
 					return;
 				}
 				if (data.ok > 0 || data > 0) {
+					meeting.title = title;
+					meeting.lineId = lineId;
+					delete meeting.userId;
 
-					userdb.update({"_id":userId}, {$push : {activeMeetings :{lineId:lineId,title:title,time:meetings}}})
-
-
-					//send to manager notification aboutt new user
-					var notifiy = {
-							notificationsId: lineManagerId,
-							lineId: lineId,
-							type: "managerNewUser",
-							to: "one",
-							title: title,
-							userName: userName
+					userdb.update({
+						"_id": userId
+					}, {
+						$push: {
+							activeMeetings: meeting
 						}
-						//users.notify(notifiy);
-					res.send(details);
-				} else {
-					res.send(false);
-				}
+					}, function(err, data) {
 
+						if (err || !data) {
+							console.log("joinLine.findOne.err@ ", err);
+							res.send(false);
+							return;
+						}
+						if (data.ok > 0 || data > 0) {
+							//send to manager notification aboutt new user
+							var notifiy = {
+									notificationsId: lineManagerId,
+									lineId: lineId,
+									type: "managerNewUser",
+									to: "one",
+									title: title,
+									userName: userName
+								}
+								//users.notify(notifiy);
+							res.send(details);
+						} else {
+							res.send(false);
+						}
+					});
+
+				}
 			});
 	});
 
@@ -190,14 +212,14 @@ exports.confirmMeeting = function(req, res) {
 				'meetings.$.confirmed': true
 			}
 		},
-		function(err, data) { 
-			
+		function(err, data) {
+
 			if (err || !data || data === 0) {
 				console.log(err);
 				res.send(false);
 				return;
 			}
-			var line =  data.toJSON();
+			var line = data.toJSON();
 			//notify manager meeting confirmed
 			var notify = {
 				ids: line.lineManagerId,
@@ -218,7 +240,7 @@ exports.confirmMeeting = function(req, res) {
 };
 
 exports.cancelMeeting = function(req, res) {
-	debugger;
+
 	if (!req.query.lineId || !req.query.userId || !req.query.time || !req.query.userName) {
 		console.log('cancelMeeting@ no search query return nothing');
 		res.send(false);
@@ -238,7 +260,7 @@ exports.cancelMeeting = function(req, res) {
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-		debugger;
+		
 		if (err || !data) {
 			console.log("cancelMeeting.find.err@ ", err);
 			res.send(false);
@@ -255,21 +277,20 @@ exports.cancelMeeting = function(req, res) {
 				usersNewTime.push(line.meetings[i].time);
 			}
 		}
-		if (line.nextAvailabeMeeting  != null) {
+		if (line.nextAvailabeMeeting != null) {
 			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() - line.druation * 60000);
-			if(line.nextAvailabeMeeting > line.endDate) {
+			if (line.nextAvailabeMeeting > line.endDate) {
 				line.nextAvailabeMeeting = null;
 				line.drawMeetings = false;
 			}
-		}
-		else {
+		} else {
 			var newTime = new Date(line.nextAvailabeMeeting.getTime() - line.druation * 60000);
-			if (newTime <= line.endDate){
+			if (newTime <= line.endDate) {
 				line.nextAvailabeMeeting = newTime;
 				line.drawMeetings = true;
 			}
 		}
-		
+
 
 		if (notificationsId.length > 0) {
 			//notify all user after canceld line that line shorted
@@ -294,13 +315,13 @@ exports.cancelMeeting = function(req, res) {
 			users.notify(notify2);
 		}
 
-		
+
 		db.update({
 			"_id": lineId
 		}, {
 			meetingsCounter: line.meetingsCounter,
-			nextAvailabeMeeting:line.nextAvailabeMeeting,
-			drawMeetings:line.drawMeetings,
+			nextAvailabeMeeting: line.nextAvailabeMeeting,
+			drawMeetings: line.drawMeetings,
 			$pull: {
 				meetings: {
 					userId: userId
@@ -311,14 +332,14 @@ exports.cancelMeeting = function(req, res) {
 			}
 
 		}, function(err, data) {
-			debugger;
+			
 			if (err) {
 				console.log("cancelMeeting.update.err@ ", err);
 				res.send(false);
 				return;
 			}
 			if (data > 0 || data.ok > 0) {
-				moveMeetingToPassed(lineId , userId , line.title);
+				moveMeetingToPassed(lineId, userId, line.title);
 				res.send(true);
 				return;
 			}
@@ -332,16 +353,21 @@ exports.cancelMeeting = function(req, res) {
 
 
 
-function moveMeetingToPassed(lineId, userId , title) {
+function moveMeetingToPassed(lineId, userId, title) {
 
 	userdb.update({
 		"_id": userId
 	}, {
 		$pull: {
-			activeMeetings: { lineId :lineId}
+			activeMeetings: {
+				lineId: lineId
+			}
 		},
 		$push: {
-			passedMeetings: {lineId:lineId , title:title}
+			passedMeetings: {
+				lineId: lineId,
+				title: title
+			}
 		}
 	}, function(err, data) {
 		//TODO wirte this

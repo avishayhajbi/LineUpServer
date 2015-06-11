@@ -67,11 +67,9 @@ exports.pushToken = function(req, res) {
 	var pushToken = req.query.pushToken;
 
 	userdb.findOneAndUpdate({
-		userId: userId
+		"_id": userId
 	}, {
-		$set: {
-			pushToken: pushToken
-		}
+		pushToken: pushToken
 	}, {
 		upsert: true
 	}, function(err, data) {
@@ -81,14 +79,7 @@ exports.pushToken = function(req, res) {
 			res.send(false);
 			return;
 		}
-		if (data.isNew) {
-			res.send("signed");
-			return;
-		} else {
-			res.send("exist");
-			return;
-		}
-
+		res.send(true);
 	});
 
 }
@@ -99,12 +90,12 @@ exports.notify = function(data) {
 	delete data.ids;
 
 	userdb.find({
-			"userId": {
+			"_id": {
 				$in: Array.isArray(ids) ? ids : [ids]
 			}
 		},
 		function(err, docs) {
-				
+				debugger;
 			if (err || docs == 0) {
 				console.log("err in notify");
 				return;

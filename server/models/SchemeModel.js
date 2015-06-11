@@ -74,6 +74,7 @@ var userSchema = mongoose.model('Users', {
 	activeMeetings: [{
 		title: String,
 		lineId: String,
+		time:Date,
 		_id:false
 	}],
 	passedMeetings: [{

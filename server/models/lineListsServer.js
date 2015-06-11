@@ -34,16 +34,19 @@ exports.searchlineList = function(req, res) {
 
 exports.getLine = function(req, res) {
 
+	if (!req.query.lineId || !req.query.userId) {
+		console.log('joinLine@  no search query return nothing');
+		res.send("noSuchLine");
+		return;
+	}
+
+
   var lineId = req.query.lineId;
-  if (!lineId) {
-    console.log('getLine@ no search query return nothing');
-    res.send("noSuchLine");
-    return;
-  }
+  var userId = req.query.userId;
+  
   db.findOne({
       "_id": lineId
     },
-    "availableDates title active drawMeetings day druation location confirmTime",
     function(err, data) {
 
       if (err || !data) {
@@ -53,10 +56,18 @@ exports.getLine = function(req, res) {
       }
       var line = data.toJSON();
 
-      if (!line.drawMeetings) {
-        console.log("noRoom");
-        res.send("noRoom");
-      }
+ 		if (!line.drawMeetings || line.nextAvailabeMeeting == null) {
+			console.log("noRoom");
+			res.send("noRoom");
+			return;
+		}
+		for (var i = 0; i < line.meetings.length; i++) {
+			if (line.meetings[i].userId == userId) {
+				console.log("userSignedIn");
+				res.send("userSignedIn");
+				return;
+			}
+		}
       var lineInfo = {
         startDate: line.startDate,
         endDate: line.endDate,

@@ -311,6 +311,7 @@ exports.endLine = function(req, res) {
 		var title = doc.title;
 		var meetings = doc.meetings;
 
+		debugger;
 		var notificationsId = [];
 		for (var i = 0; i < meetings.length; i++) {
 			notificationsId.push(meetings[i].userId);
