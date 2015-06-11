@@ -11,6 +11,7 @@ var dataSchema = mongoose.model('Lines', {
 	}],
 	title: String,
 	druation: Number,
+	druationAvarage: Number,
 	confirmTime: String,
 	manuall: Boolean,
 	active: Boolean,

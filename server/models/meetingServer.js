@@ -22,7 +22,6 @@ exports.joinLine = function(req, res) {
 	};
 
 
-
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
@@ -74,7 +73,8 @@ exports.joinLine = function(req, res) {
 			title: title,
 			location: line.location,
 			startDate: line.startDate,
-			endDate: line.endDate
+			endDate: line.endDate,
+			druationAvarage:line.druationAvarage
 		}
 
 
@@ -116,16 +116,17 @@ exports.joinLine = function(req, res) {
 							return;
 						}
 						if (data.ok > 0 || data > 0) {
+
 							//send to manager notification aboutt new user
-							var notifiy = {
-									notificationsId: lineManagerId,
+							var notify = {
+									ids: lineManagerId,
 									lineId: lineId,
-									type: "managerNewUser",
+									type: "newUser",
 									to: "one",
 									title: title,
 									userName: userName
 								}
-								//users.notify(notifiy);
+								users.notify(notify);
 							res.send(details);
 						} else {
 							res.send(false);
@@ -178,12 +179,33 @@ exports.getMeetingInfo = function(req, res) {
 					title: line.title,
 					location: line.location,
 					startDate: line.startDate,
-					endDate: line.endDate
+					endDate: line.endDate,
+					druationAvarage:line.druationAvarage
 				}
 				res.send(details);
 				return;
 			}
 		}
+
+		if (userId == line.currentMeeting.userId) {			
+				var details = {
+					position: "in line",
+					time: line.currentMeeting.time,
+					confirmed: line.currentMeeting.confirmed,
+					active: line.active,
+					druation: line.druation,
+					confirmTime: line.confirmTime,
+					lineId: line._id,
+					title: line.title,
+					location: line.location,
+					startDate: line.startDate,
+					endDate: line.endDate,
+					druationAvarage:line.druationAvarage
+				}
+				res.send(details);
+				return;
+		}
+
 		res.send(false);
 	});
 }
@@ -224,10 +246,10 @@ exports.confirmMeeting = function(req, res) {
 			var notify = {
 				ids: line.lineManagerId,
 				lineId: lineId,
-				type: "?",
+				type: "meetingConfirmed",
 				title: line.title,
 				to: "one",
-				userName: cancel.userName
+				userName: userName
 			}
 
 			users.notify(notify);
@@ -260,7 +282,7 @@ exports.cancelMeeting = function(req, res) {
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-		
+
 		if (err || !data) {
 			console.log("cancelMeeting.find.err@ ", err);
 			res.send(false);
@@ -270,6 +292,7 @@ exports.cancelMeeting = function(req, res) {
 		line.meetingsCounter--;
 		var notificationsId = [];
 		var usersNewTime = [];
+
 		for (var i = 0; i < line.meetings.length; i++) {
 			if (line.meetings[i].time > cancel.time) {
 				notificationsId.push(line.meetings[i].userId);
@@ -297,24 +320,23 @@ exports.cancelMeeting = function(req, res) {
 			var notify = {
 				ids: notificationsId,
 				lineId: lineId,
-				type: "?",
+				type: "lineShorted",
 				title: line.title,
 				to: "singels",
 				usersNewTime: usersNewTime
 			}
 			users.notify(notify);
-			//notify manager user canceled
-			var notify2 = {
-				ids: line.lineManagerId,
-				lineId: lineId,
-				type: "?",
-				title: line.title,
-				to: "one",
-				userName: cancel.userName
-			}
-			users.notify(notify2);
 		}
-
+		//notify manager user canceled
+		var notify2 = {
+			ids: line.lineManagerId,
+			lineId: lineId,
+			type: "userCanceldMeeting",
+			title: line.title,
+			to: "one",
+			userName: cancel.userName
+		}
+		users.notify(notify2);
 
 		db.update({
 			"_id": lineId
@@ -332,7 +354,7 @@ exports.cancelMeeting = function(req, res) {
 			}
 
 		}, function(err, data) {
-			
+
 			if (err) {
 				console.log("cancelMeeting.update.err@ ", err);
 				res.send(false);

@@ -16,7 +16,8 @@ exports.createLine = function(req, res) {
 	line.nextAvailabeMeeting = line.startDate;
 	line.drawMeetings = true;
 	line.active = false;
-	line.currentMeeting = 0;
+	line.druationAvarage = line.druation;
+	line.currentMeeting = {};
 	line.meetings = [];
 	line.canceldMeetings = [];
 	line.passedMeetings = [];
@@ -27,7 +28,7 @@ exports.createLine = function(req, res) {
 		console.log("no user id in this line please signed in");
 	}
 	db.create(line, function(err, data) {
-		
+
 		console.log("insert new");
 		if (err || !data) {
 			console.log(err);
@@ -39,26 +40,57 @@ exports.createLine = function(req, res) {
 		var title = line.title;
 
 
-		var notify = {
+		var notify1 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			type: "?",
+			type: "lineWillBegin",
+			title: title,
+			time: (line.druation + line.confirmTime) + " minutes",
+			to: "one"
+		}
+
+		var notify2 = {
+			ids: line.lineManagerId,
+			lineId: lineId,
+			type: "lineWillBeginIn5",
 			title: title,
 			to: "one"
 		}
 
+		var notify3 = {
+			ids: line.lineManagerId,
+			lineId: lineId,
+			type: "lineStart",
+			title: title,
+			to: "one"
+		}
+		var now = new Date();
 		var timeToNotify = new Date(line.startDate.getTime() - (line.druation + line.confirmTime) * 60000);
 		var timeToNotify2 = new Date(line.startDate.getTime() - 5 * 60000);
+		var timeToNotify3 = new Date(line.startDate.getTime());
+
 		//notify manager before line begings
-		scheduleJob(notify, timeToNotify);
-		//notify manager 5 minutes befure line begings
-		scheduleJob(notify, timeToNotify2);
+		if (now <= timeToNotify) {
+			scheduleJob(notify1, timeToNotify);
+		}
+		//notify manager 5 minutes before line begings
+		if (now <= timeToNotify2) {
+			scheduleJob(notify2, timeToNotify2);
+		}
+		//open line
+		if (now <= timeToNotify3) {
+			scheduleJob(notify3, timeToNotify3);
+		}
+
 
 		userdb.update({
 			"_id": line.lineManagerId
 		}, {
 			$push: {
-				activeLines: {lineId:lineId,title:title}
+				activeLines: {
+					lineId: lineId,
+					title: title
+				}
 			}
 		}, function(err, data) {
 
@@ -98,8 +130,17 @@ exports.nextMeeting = function(req, res) {
 		var title = line.title;
 		line.passedMeetings.push(line.currentMeeting);
 
+		var notify = {
+			ids: line.currentMeeting.userId,
+			lineId: lineId,
+			type: "endMeeting",
+			title: title,
+			to: "one"
+		}
+		users.notify(notify);
 
-		if (!line.meetings[0].time) {
+
+		if (!line.meetings[0]) {
 			console.log("no more meetings");
 
 			if (new Date() - line.endDate < line.druation) {
@@ -113,34 +154,38 @@ exports.nextMeeting = function(req, res) {
 			}
 
 		} else {
+
 			//if there is more meetings
 			var next = line.meetings.pop();
 			if (next) {
 				line.currentMeeting = next;
 				//nofity next user to enter line
 				var notify = {
-						ids: line.currentMeeting.userId,
+					ids: line.currentMeeting.userId,
+					lineId: lineId,
+					type: "enterLine",
+					title: title,
+					to: "one"
+				}
+				users.notify(notify);
+				//nofity next next user if exist is meeting getting closer
+				if (line.meetings[1]) {
+					var notify = {
+						ids: line.meetings[1].userId,
 						lineId: lineId,
-						type: "?",
+						type: "nextInLine",
 						title: title,
 						to: "one"
 					}
-					//users.notify(notify);
-					//nofity next next user if exist is meeting getting closer
-				if (line.meetings[1].time) {
-					var notify = {
-							ids: line.meetings[1].userId,
-							lineId: lineId,
-							type: "?",
-							title: title,
-							to: "one"
-						}
-						//users.notify(notify);
+					users.notify(notify);
 				}
 				//check if meeting took more than 5 minutes if yes notify all
 				//and change time
 				var offset = next.time.getTime() - new Date().getTime();
+
 				if (offset >= 5 || offset <= 5) {
+
+					line.druationAvarage = (line.druation - offset) * (line.meetingsCounter * line.druationAvarage);
 
 					var notificationsId = [];
 					var usersNewTime = [];
@@ -165,7 +210,7 @@ exports.nextMeeting = function(req, res) {
 						var notify = {
 							ids: notificationsId,
 							lineId: lineId,
-							type: "?",
+							type: "newTime",
 							title: title,
 							to: "singels",
 							usersNewTime: usersNewTime
@@ -187,17 +232,19 @@ exports.nextMeeting = function(req, res) {
 			meetings: line.meetings,
 			passedMeetings: line.passedMeetings,
 			nextAvailabeMeeting: line.nextAvailabeMeeting,
+			druationAvarage: line.druationAvarage
 
 		}, {
 			upsert: true
 		}, function(err, data) {
+
 			if (err || !data || data === 0) {
 				console.log(err);
 				return;
 			}
 		});
 		if (!line.drawMeetings) {
-			moveLineToPassed(lineId,title, line.lineManagerId);
+			moveLineToPassed(lineId, title, line.lineManagerId);
 		}
 	});
 }
@@ -231,6 +278,7 @@ exports.postponeLine = function(req, res) {
 
 		var notificationsId = [];
 		var usersNewTime = [];
+
 		// interat on meetings and create new time for them
 		for (var i = 0; i < meetings.length; i++) {
 			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
@@ -243,7 +291,7 @@ exports.postponeLine = function(req, res) {
 			var notify = {
 				ids: notificationsId,
 				lineId: lineId,
-				type: "204",
+				type: "postponeLine",
 				title: title,
 				to: "singels",
 				usersNewTime: usersNewTime
@@ -262,7 +310,7 @@ exports.postponeLine = function(req, res) {
 		}
 
 		if (!line.drawMeetings) {
-			moveLineToPassed(lineId,title, lineManagerId);
+			moveLineToPassed(lineId, title, lineManagerId);
 		}
 
 		db.update({
@@ -311,7 +359,7 @@ exports.endLine = function(req, res) {
 		var title = doc.title;
 		var meetings = doc.meetings;
 
-		debugger;
+
 		var notificationsId = [];
 		for (var i = 0; i < meetings.length; i++) {
 			notificationsId.push(meetings[i].userId);
@@ -322,14 +370,14 @@ exports.endLine = function(req, res) {
 			var notify = {
 				ids: notificationsId,
 				lineId: lineId,
-				type: "206",
+				type: "endLine",
 				title: title,
 				to: "all"
 			}
 			users.notify(notify);
 		}
 
-		moveLineToPassed(lineId,title, id);
+		moveLineToPassed(lineId, title, id);
 
 		db.update({
 			"_id": lineId
@@ -381,41 +429,128 @@ exports.getLineInfo = function(req, res) {
 function scheduleJob(notify, time) {
 
 	cron.scheduleJob(notify, time, function() {
-		users.notify(notify);
-		sendConfirmation(notify.lineId);
+
+		if (notify.type === "lineStart") {
+			startLine(notify);
+		} else {
+			sendConfirmation(notify.lineId);
+		}
+
 	});
+}
+
+function startLine(notify) {
+
+	db.findOne({
+		"_id": notify.lineId
+	}, function(err, data) {
+		if (err || !data) {
+			console.log("cant send confirmation");
+			return;
+		}
+		var line = data.toJSON();
+		if (line.meetings[0]) {
+			line.currentMeeting = line.meetings.pop();
+			notify.username = line.currentMeeting.userName;
+		} else {
+			notify.type = "lineStartNoUsers";
+		}
+		line.active = true;
+		db.update({
+			"_id": notify.lineId
+		}, {
+			currentMeeting: line.currentMeeting,
+			active: line.active,
+			meetings: meetings
+		}, function(err, data) {
+
+			if (err || !data) {
+				console.log("wwee");
+				return;
+			}
+			users.notify(notify);
+		});
+
+
+	});
+
+
 }
 
 function sendConfirmation(lineId) {
 
 	db.findOne({
-			"_id": lineId
-		}, "meetings druation confirmTime title", function(err, data) {
-			if (err || !data) {
-				console.log("cant send confirmation");
-				return;
+		"_id": lineId
+	}, function(err, data) {
+		debugger;
+		if (err || !data) {
+			console.log("cant send confirmation");
+			return;
+		}
+		var line = data.toJSON();
+		var title = line.title;
+		var meetings = line.meetings;
+		var notificationsId = [];
+		var notificationsId2 = [];
+		var usersNewTime = [];
+		//intarte all users and send confirmation to them
+
+
+		for (var i = 0; i < meetings.length; i++) {
+			var timeToConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 60000);
+			var timeFromConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 180000);
+			var now = new Date();
+			if (!meetings[i].confirmed && now > timeToConfirm) {
+				notificationsId2.push(meetings[i].userId);
+				line.canceldMeetings.push(meetings[i]);
+				line.meetings.splice(i, 1);
+			} else if (!meetings[i].confirmed && timeFromConfirm <= now <= timeToConfirm) {
+				notificationsId.push(meetings[i].userId);
+				usersNewTime.push(meetings[i].time);
 			}
-			var line = data.toJSON();
-			var title = line.title;
-			var meetings = line.meetings;
-			var notificationsId = [];
-			var usersNewTime = [];
-			//intarte all users and send confirmation to them
-			for (var i = 0; i < meetings.length; i++) {
-				if (!meetings[i].confrimed && (meetings[i].time - new Date() <= confirmTime)) {
-					notificationsId.push(meetings[i].userId);
-					usersNewTime.push(meetings[i].time);
-						}
-					var notify = {
-						ids: notificationsId,
-						lineId: lineId,
-						type: "?",
-						usersNewTime:usesetCurrentrsNewTime,
-						title: title,
-						to: "singels"
-					}
-					users.notify(notify);			
+
+		}
+		if (notificationsId.length > 0) {
+			var notify = {
+				ids: notificationsId,
+				lineId: lineId,
+				type: "askConfirmed",
+				usersNewTime: usersNewTime,
+				title: title,
+				to: "singels"
 			}
+
+			users.notify(notify);
+		}
+
+
+		if (notificationsId2.length > 0) {
+
+			var notify2 = {
+				ids: notificationsId2,
+				lineId: lineId,
+				type: "noConfirmation",
+				title: title,
+				to: "all"
+			}
+
+			db.update({
+				"_id": lineId
+			}, {
+				canceldMeetings: line.canceldMeetings,
+				meetings: line.meetings
+			}, function(err, data) {
+				if (err) {
+					console.log("meetingsToCancel.err@ ", err);
+					return;
+				}
+				if (data > 0 || data.ok > 0) {
+					users.notify(notify2);
+					return;
+				}
+			});
+		}
+
 	});
 }
 
@@ -425,10 +560,15 @@ function moveLineToPassed(lineId, title, userId) {
 		"_id": userId
 	}, {
 		$pull: {
-			activeLines: {lineId:lineId}
+			activeLines: {
+				lineId: lineId
+			}
 		},
 		$push: {
-			passedLines: {lineId:lineId,title:title}
+			passedLines: {
+				lineId: lineId,
+				title: title
+			}
 		}
 	}, function(err, data) {
 		//TODO wirte this

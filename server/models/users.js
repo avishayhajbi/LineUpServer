@@ -95,19 +95,19 @@ exports.notify = function(data) {
 			}
 		},
 		function(err, docs) {
-				debugger;
+				
 			if (err || docs == 0) {
 				console.log("err in notify");
 				return;
 			}
-			if (data.to == "singles") {
+			if (data.to == "singels") {
 				delete data.to;
 				for (var i = 0; i < docs.length; i++) {
 					var doc = docs[i].toJSON();
 					for (var j = 0; j < ids.length; j++) {
-						if (ids[j] === doc.userId && doc.pushToken) {
+						if (ids[j] === doc._id.toJSON() && doc.pushToken) {
 							sendMessage({
-								usersNewTime: data[j].usersNewTime,
+								usersNewTime: data.usersNewTime[j],
 								token: doc.pushToken,
 								lineId: data.lineId,
 								type: data.type,
@@ -122,7 +122,7 @@ exports.notify = function(data) {
 				for (var i = 0; i < docs.length; i++) {
 					var doc = docs[i].toJSON();
 					for (var j = 0; j < ids.length; j++) {
-						if (ids[j] === doc.userId && doc.pushToken) {
+						if (ids[j] === doc._id.toJSON() && doc.pushToken) {
 							data.token.push(doc.pushToken);
 						}
 					}
