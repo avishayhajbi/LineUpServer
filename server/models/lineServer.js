@@ -266,7 +266,7 @@ exports.postponeLine = function(req, res) {
 
 	var lineId = req.query.lineId;
 	var lineManagerId = req.query.lineManagerId;
-	var delayTime = req.query.time;
+	var delayTime = parseInt(req.query.time);
 
 	db.findOne({
 		"_id": lineId,
@@ -288,7 +288,7 @@ exports.postponeLine = function(req, res) {
 
 		// interat on meetings and create new time for them
 		for (var i = 0; i < meetings.length; i++) {
-			meetings[i].time = new Date(meetings[i].time.getTime() + delayTime * 60000);
+			meetings[i].time = new Date(meetings[i].time.getTime() + (delayTime * 60000));
 			usersNewTime.push(meetings[i].time);
 			notificationsId.push(meetings[i].userId);
 		}
@@ -309,15 +309,11 @@ exports.postponeLine = function(req, res) {
 		}
 
 		if (line.nextAvailabeMeeting !== null) {
-			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting + delayTime * 60000);
+			line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() + (delayTime * 60000));
 			if (line.nextAvailabeMeeting > line.endDate) {
 				line.nextAvailabeMeeting = null;
 				line.drawMeetings = false;
 			}
-		}
-
-		if (!line.drawMeetings) {
-			moveLineToPassed(lineId, title, lineManagerId);
 		}
 
 		db.update({
