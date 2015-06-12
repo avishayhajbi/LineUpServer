@@ -101,10 +101,10 @@ exports.createLine = function(req, res) {
 				return;
 			}
 			if (data > 0 || data.ok > 0) {
-					res.send(lineId);
-					return;
-				}
-			
+				res.send(lineId);
+				return;
+			}
+
 		})
 	});
 
@@ -133,6 +133,12 @@ exports.nextMeeting = function(req, res) {
 
 		var line = data.toJSON();
 		var title = line.title;
+	
+		if (!line.currentMeeting) {
+			res.send("lineDidntStart");
+			return;
+		}
+
 		line.passedMeetings.push(line.currentMeeting);
 
 		var notify = {
@@ -144,7 +150,7 @@ exports.nextMeeting = function(req, res) {
 		}
 		users.notify(notify);
 
-
+		var send = true;
 		if (!line.meetings[0]) {
 			console.log("no more meetings");
 
@@ -153,10 +159,10 @@ exports.nextMeeting = function(req, res) {
 				line.drawMeetings = false;
 				line.ended = false;
 				line.active = false;
-				res.send("noMoreMeetingsLineClosed");
+				send = "noMoreMeetingsLineClosed";
 			} else {
 				//ask manager if to close to line or wait to new users
-				res.send("noMoreMeetingsAskWhatToDo");
+				send = "noMoreMeetingsAskWhatToDo";
 			}
 
 		} else {
@@ -226,7 +232,7 @@ exports.nextMeeting = function(req, res) {
 						sendConfirmation(lineId);
 					}
 				}
-				res.send(true);
+
 			}
 		}
 		db.update({
@@ -234,7 +240,7 @@ exports.nextMeeting = function(req, res) {
 		}, {
 			currentMeeting: line.currentMeeting,
 			active: line.active,
-			ended:line.ended,
+			ended: line.ended,
 			drawMeetings: line.drawMeetings,
 			meetings: line.meetings,
 			passedMeetings: line.passedMeetings,
@@ -247,12 +253,15 @@ exports.nextMeeting = function(req, res) {
 
 			if (err || !data || data === 0) {
 				console.log(err);
+				res.send(false);
 				return;
 			}
+			res.send(send);
+			if (line.ended) {
+				moveLineToPassed(lineId, title, line.lineManagerId);
+			}
 		});
-		if (line.ended) {
-			moveLineToPassed(lineId, title, line.lineManagerId);
-		}
+
 	});
 }
 
@@ -351,7 +360,7 @@ exports.endLine = function(req, res) {
 	db.findOne({
 		"_id": lineId,
 		"lineManagerId": id
-	}, "meetings drawMeetings active title", function(err, data) {
+	}, function(err, data) {
 
 		if (err || !data) {
 			console.log(err);
@@ -387,7 +396,7 @@ exports.endLine = function(req, res) {
 		}, {
 			drawMeetings: false,
 			active: false,
-			ended:true
+			ended: true
 		}, function(err, data) {
 			if (err || !data || data === 0) {
 				console.log(err);
@@ -489,7 +498,7 @@ function sendConfirmation(lineId) {
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-		
+
 		if (err || !data) {
 			console.log("cant send confirmation");
 			return;
@@ -533,7 +542,7 @@ function sendConfirmation(lineId) {
 			users.notify(notify);
 		}
 
-		
+
 		if (notificationsId2.length > 0) {
 
 			var notify2 = {
