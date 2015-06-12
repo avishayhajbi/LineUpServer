@@ -15,6 +15,7 @@ var dataSchema = mongoose.model('Lines', {
 	confirmTime: String,
 	manuall: Boolean,
 	active: Boolean,
+	ended: Boolean,
 	nextAvailabeMeeting: Date,
 	lineManagerId: String,
 	startDate: Date,

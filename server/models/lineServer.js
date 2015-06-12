@@ -19,6 +19,7 @@ exports.createLine = function(req, res) {
 	line.druationAvarage = line.druation;
 	line.currentMeeting = {};
 	line.meetings = [];
+	line.ended = false;
 	line.canceldMeetings = [];
 	line.passedMeetings = [];
 	line.meetingsCounter = 0;
@@ -94,12 +95,16 @@ exports.createLine = function(req, res) {
 			}
 		}, function(err, data) {
 
-			if (err || !data || data <= 0) {
+			if (err) {
 				res.send(false);
 				console.log("failed to save");
 				return;
 			}
-			res.send(lineId);
+			if (data > 0 || data.ok > 0) {
+					res.send(lineId);
+					return;
+				}
+			
 		})
 	});
 
@@ -146,6 +151,7 @@ exports.nextMeeting = function(req, res) {
 			if (new Date() - line.endDate < line.druation) {
 				console.log("no room for meetings closing line");
 				line.drawMeetings = false;
+				line.ended = false;
 				line.active = false;
 				res.send("noMoreMeetingsLineClosed");
 			} else {
@@ -228,6 +234,7 @@ exports.nextMeeting = function(req, res) {
 		}, {
 			currentMeeting: line.currentMeeting,
 			active: line.active,
+			ended:line.ended,
 			drawMeetings: line.drawMeetings,
 			meetings: line.meetings,
 			passedMeetings: line.passedMeetings,
@@ -243,7 +250,7 @@ exports.nextMeeting = function(req, res) {
 				return;
 			}
 		});
-		if (!line.drawMeetings) {
+		if (line.ended) {
 			moveLineToPassed(lineId, title, line.lineManagerId);
 		}
 	});
@@ -383,7 +390,8 @@ exports.endLine = function(req, res) {
 			"_id": lineId
 		}, {
 			drawMeetings: false,
-			active: false
+			active: false,
+			ended:true
 		}, function(err, data) {
 			if (err || !data || data === 0) {
 				console.log(err);
@@ -449,6 +457,9 @@ function startLine(notify) {
 			return;
 		}
 		var line = data.toJSON();
+		if (line.ended) {
+			return;
+		}
 		if (line.meetings[0]) {
 			line.currentMeeting = line.meetings.pop();
 			notify.username = line.currentMeeting.userName;
@@ -461,7 +472,7 @@ function startLine(notify) {
 		}, {
 			currentMeeting: line.currentMeeting,
 			active: line.active,
-			meetings: meetings
+			meetings: line.meetings
 		}, function(err, data) {
 
 			if (err || !data) {
@@ -482,12 +493,15 @@ function sendConfirmation(lineId) {
 	db.findOne({
 		"_id": lineId
 	}, function(err, data) {
-		debugger;
+		
 		if (err || !data) {
 			console.log("cant send confirmation");
 			return;
 		}
 		var line = data.toJSON();
+		if (line.ended) {
+			return;
+		}
 		var title = line.title;
 		var meetings = line.meetings;
 		var notificationsId = [];
@@ -523,7 +537,7 @@ function sendConfirmation(lineId) {
 			users.notify(notify);
 		}
 
-
+		
 		if (notificationsId2.length > 0) {
 
 			var notify2 = {
