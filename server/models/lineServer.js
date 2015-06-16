@@ -13,7 +13,7 @@ exports.createLine = function(req, res) {
 		return;
 	}
 	var line = JSON.parse(req.query.line);
-	line.nextAvailabeMeeting = line.startDate;
+	line.nextAvailabeMeeting = new Date(line.startDate);
 	line.drawMeetings = true;
 	line.active = false;
 	line.druationAvarage = line.druation;
@@ -44,25 +44,23 @@ exports.createLine = function(req, res) {
 		var notify1 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			type: "lineWillBegin",
-			title: title,
-			time: (line.druation + line.confirmTime) + " minutes",
+			message: "line: " + title + " will begin in" + (line.druation + line.confirmTime) + " minutes",
+			type: "line",
 			to: "one"
 		}
 
 		var notify2 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			type: "lineWillBeginIn5",
-			title: title,
+			type: "line",
+			message: "line: " + title + " will begin in 5 minutes",
 			to: "one"
 		}
 
 		var notify3 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			type: "lineStart",
-			title: title,
+			type: "line",
 			to: "one"
 		}
 		var now = new Date();
@@ -133,7 +131,7 @@ exports.nextMeeting = function(req, res) {
 
 		var line = data.toJSON();
 		var title = line.title;
-	
+
 		if (!line.currentMeeting) {
 			res.send("lineDidntStart");
 			return;
@@ -141,11 +139,12 @@ exports.nextMeeting = function(req, res) {
 
 		line.passedMeetings.push(line.currentMeeting);
 
+		//notify user line ended
 		var notify = {
 			ids: line.currentMeeting.userId,
 			lineId: lineId,
-			type: "endMeeting",
-			title: title,
+			message: "thanks u form: " + title,
+			type: "remove",
 			to: "one"
 		}
 		users.notify(notify);
@@ -175,8 +174,8 @@ exports.nextMeeting = function(req, res) {
 				var notify = {
 					ids: line.currentMeeting.userId,
 					lineId: lineId,
-					type: "enterLine",
-					title: title,
+					type: "meeting",
+					message: "please enter to line: " + title,
 					to: "one"
 				}
 				users.notify(notify);
@@ -185,14 +184,15 @@ exports.nextMeeting = function(req, res) {
 					var notify = {
 						ids: line.meetings[1].userId,
 						lineId: lineId,
-						type: "nextInLine",
-						title: title,
+						type: "meeting",
+						message: "your are nexy in line: " + title,
 						to: "one"
 					}
 					users.notify(notify);
 				}
 				//check if meeting took more than 5 minutes if yes notify all
 				//and change time
+
 				var offset = next.time.getTime() - new Date().getTime();
 
 				if (offset >= 5 || offset <= 5) {
@@ -200,12 +200,12 @@ exports.nextMeeting = function(req, res) {
 					line.druationAvarage = (line.druation - offset) * (line.meetingsCounter * line.druationAvarage);
 
 					var notificationsId = [];
-					var usersNewTime = [];
+					var message = [];
 					for (var i = 0; i < line.meetings.length; i++) {
 						notificationsId.push(line.meetings[i].userId);
 						line.meetings[i].time = new Date(line.meetings[i].time.getTime() - offset * 60000);
-						usersNewTime.push(line.meetings[i].time);
-
+						var newTimeString = line.meetings[i].time.getHours() + ":" + line.meetings[i].time.getMinutes() + "  " + line.meetings[i].time.getDate() + '/' + line.meetings[i].time.getMonth() + '/' + line.meetings[i].time.getFullYear();
+						message.push("Line: " + title + " updated time:" + newTimeString);
 					}
 					if (line.nextAvailabeMeeting != null) {
 						line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() - offset * 60000);
@@ -222,10 +222,9 @@ exports.nextMeeting = function(req, res) {
 						var notify = {
 							ids: notificationsId,
 							lineId: lineId,
-							type: "newTime",
-							title: title,
+							type: "meeting",
 							to: "singels",
-							usersNewTime: usersNewTime
+							message: message
 						}
 						users.notify(notify);
 						// check if to send confirmation request
@@ -293,12 +292,14 @@ exports.postponeLine = function(req, res) {
 		var meetings = line.meetings;
 
 		var notificationsId = [];
-		var usersNewTime = [];
+		var message = [];
 
 		// interat on meetings and create new time for them
 		for (var i = 0; i < meetings.length; i++) {
 			meetings[i].time = new Date(meetings[i].time.getTime() + (delayTime * 60000));
-			usersNewTime.push(meetings[i].time);
+			var newTimeString = line.meetings[i].time.getHours() + ":" + line.meetings[i].time.getMinutes() + "  " + line.meetings[i].time.getDate() + '/' + line.meetings[i].time.getMonth() + '/' + line.meetings[i].time.getFullYear();
+
+			message.push("Line: " + title + " postpone new time:" + newTimeString);
 			notificationsId.push(meetings[i].userId);
 		}
 
@@ -307,14 +308,14 @@ exports.postponeLine = function(req, res) {
 			var notify = {
 				ids: notificationsId,
 				lineId: lineId,
-				type: "postponeLine",
+				type: "meeting",
 				title: title,
 				to: "singels",
-				usersNewTime: usersNewTime
+				message: message
 			}
 			users.notify(notify);
 			//check if to send conformation 
-			sendConfirmation(lineId);
+			//sendConfirmation(lineId);
 		}
 
 		if (line.nextAvailabeMeeting !== null) {
@@ -381,9 +382,9 @@ exports.endLine = function(req, res) {
 		if (notificationsId.length > 0) {
 			var notify = {
 				ids: notificationsId,
+				message: "Line: " + title + " canceld",
 				lineId: lineId,
-				type: "endLine",
-				title: title,
+				type: "remove",
 				to: "all"
 			}
 			users.notify(notify);
@@ -467,9 +468,9 @@ function startLine(notify) {
 		}
 		if (line.meetings[0]) {
 			line.currentMeeting = line.meetings.pop();
-			notify.username = line.currentMeeting.userName;
+			notify.message = "line: " + line.title + " started next user:" + line.currentMeeting.userName;
 		} else {
-			notify.type = "lineStartNoUsers";
+			notify.message = "line: " + line.title + " started but no one signed in :(";
 		}
 		line.active = true;
 		db.update({

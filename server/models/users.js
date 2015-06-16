@@ -107,7 +107,7 @@ exports.notify = function(data) {
 					for (var j = 0; j < ids.length; j++) {
 						if (ids[j] === doc._id.toJSON() && doc.pushToken) {
 							sendMessage({
-								usersNewTime: data.usersNewTime[j],
+								message: data.message[j],
 								token: doc.pushToken,
 								lineId: data.lineId,
 								type: data.type,
