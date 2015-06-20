@@ -449,8 +449,9 @@ function scheduleJob(notify, time) {
 		if (notify.type === "lineStart") {
 			startLine(notify);
 		} else {
-			sendConfirmation(notify.lineId);
+			users.notify(notify);
 		}
+		sendConfirmation(notify.lineId);
 
 	});
 }
@@ -461,7 +462,7 @@ function startLine(notify) {
 		"_id": notify.lineId
 	}, function(err, data) {
 		if (err || !data) {
-			console.log("cant send confirmation");
+			console.log("cant find line");
 			return;
 		}
 		var line = data.toJSON();
