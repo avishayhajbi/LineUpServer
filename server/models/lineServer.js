@@ -550,14 +550,19 @@ function sendConfirmation(lineId) {
 				line.canceldMeetings.push(meetings[i]);
 				line.meetings.splice(i, 1);
 				i--;
-			} else if (!meetings[i].confirmed && ((timeFromConfirm <= now <= timeToConfirm) || skipNext)) {
+			} else if (!meetings[i].confirmed && timeFromConfirm <= now <= timeToConfirm) {
 				if (skipNext) skipNext = false;
 				if (makeNewTimes > 0) {
 					meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
 				}
-
 				notificationsId.push(meetings[i].userId);
 				message.push("plesae confirm your meeting in line:" + title + " at " + meetings[i].time);
+
+			} else if (makeNewTimes > 0 && meetings[i].confirmed) {
+				if (skipNext) skipNext = false;
+				meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
+				notificationsId.push(meetings[i].userId);
+				message.push("line " + title + " time updated to: " + meetings[i].time);
 			}
 
 		}
