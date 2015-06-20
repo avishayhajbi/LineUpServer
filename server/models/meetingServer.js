@@ -307,7 +307,7 @@ exports.cancelMeeting = function(req, res) {
 				notificationsId.push(line.meetings[i].userId);
 				line.meetings[i].time = new Date(line.meetings[i].time.getTime() - line.druation * 60000);
 				var newTimeString = line.meetings[i].time.getHours() + ":" + line.meetings[i].time.getMinutes() + "  " + line.meetings[i].time.getDate() + '/' + line.meetings[i].time.getMonth() + '/' + line.meetings[i].time.getFullYear();
-				meesage.push("Line: " + line.title + " shorted new time:" + newTimeString)
+				message.push("Line: " + line.title + " shorted new time:" + newTimeString)
 			}
 		}
 		if (line.nextAvailabeMeeting != null) {
@@ -332,7 +332,7 @@ exports.cancelMeeting = function(req, res) {
 				lineId: lineId,
 				type: "meeting",
 				to: "singels",
-				meesage: meesage
+				message: message
 			}
 			users.notify(notify);
 		}
