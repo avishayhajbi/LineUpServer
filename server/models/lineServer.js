@@ -539,18 +539,23 @@ function sendConfirmation(lineId) {
 		var skipNext = false;
 		var makeNewTimes = 0;
 		//intarte all users and send confirmation to them
+		console.log("go over all users in line");
 		for (var i = 0; i < meetings.length; i++) {
+		
 			var timeToConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 60000);
 			var timeFromConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 180000);
 			var now = new Date();
 			if (!meetings[i].confirmed && now > timeToConfirm && !skipNext) {
+				console.log("user:"+ meetings[i].userName + " meeting canceld becuse not confirmed");
 				skipNext = true;
+				line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime()  - line.druation * 60000);
 				makeNewTimes++;
 				notificationsId2.push(meetings[i].userId);
 				line.canceldMeetings.push(meetings[i]);
 				line.meetings.splice(i, 1);
 				i--;
 			} else if (!meetings[i].confirmed && timeFromConfirm <= now <= timeToConfirm) {
+				console.log("user:"+ meetings[i].userName + " please confirm time:"+meetings[i].time);
 				if (skipNext) skipNext = false;
 				if (makeNewTimes > 0) {
 					meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
@@ -559,6 +564,7 @@ function sendConfirmation(lineId) {
 				message.push("plesae confirm your meeting in line:" + title + " at " + meetings[i].time);
 
 			} else if (makeNewTimes > 0 && meetings[i].confirmed) {
+				console.log("user:"+ meetings[i].userName + " got new time:"+meetings[i].time);
 				if (skipNext) skipNext = false;
 				meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
 				notificationsId.push(meetings[i].userId);
@@ -594,7 +600,8 @@ function sendConfirmation(lineId) {
 				"_id": lineId
 			}, {
 				canceldMeetings: line.canceldMeetings,
-				meetings: line.meetings
+				meetings: line.meetings,
+				nextAvailabeMeeting : line.nextAvailabeMeeting
 			}, function(err, data) {
 				if (err) {
 					console.log("meetingsToCancel.err@ ", err);
