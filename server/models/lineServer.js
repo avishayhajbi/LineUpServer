@@ -60,7 +60,7 @@ exports.createLine = function(req, res) {
 		var notify3 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			type: "line",
+			type: "lineStart",
 			to: "one"
 		}
 		var now = new Date();
@@ -185,7 +185,7 @@ exports.nextMeeting = function(req, res) {
 						ids: line.meetings[1].userId,
 						lineId: lineId,
 						type: "meeting",
-						message: "your are nexy in line: " + title,
+						message: "your are next in line: " + title,
 						to: "one"
 					}
 					users.notify(notify);
@@ -218,7 +218,7 @@ exports.nextMeeting = function(req, res) {
 					}
 
 					if (notificationsId.length > 0) {
-						//notify all user after canceld line that line shorted
+						//notify all user line was shorter or longer
 						var notify = {
 							ids: notificationsId,
 							lineId: lineId,
@@ -227,9 +227,8 @@ exports.nextMeeting = function(req, res) {
 							message: message
 						}
 						users.notify(notify);
-						// check if to send confirmation request
-						sendConfirmation(lineId);
 					}
+
 				}
 
 			}
@@ -256,8 +255,12 @@ exports.nextMeeting = function(req, res) {
 				return;
 			}
 			res.send(send);
+
 			if (line.ended) {
 				moveLineToPassed(lineId, title, line.lineManagerId);
+			}
+			else {
+				sendConfirmation(lineId);
 			}
 		});
 
@@ -314,8 +317,7 @@ exports.postponeLine = function(req, res) {
 				message: message
 			}
 			users.notify(notify);
-			//check if to send conformation 
-			//sendConfirmation(lineId);
+
 		}
 
 		if (line.nextAvailabeMeeting !== null) {
@@ -469,10 +471,30 @@ function startLine(notify) {
 		if (line.meetings[0]) {
 			line.currentMeeting = line.meetings.pop();
 			notify.message = "line: " + line.title + " started next user:" + line.currentMeeting.userName;
+
+			//notifay all line startred
+			var notificationsId = [];
+			for (var i = 0; i < line.meetings.length; i++) {
+				notificationsId.push(line.meetings[i].userId);
+			}
+			if (notificationsId.length > 0) {
+				var notify2 = {
+					ids: notificationsId,
+					message: "line " + line.title + "started",
+					lineId: line.lineId,
+					type: "meeting",
+					to: "all"
+
+				}
+				users.notify(notify2);
+			}
+
+
 		} else {
 			notify.message = "line: " + line.title + " started but no one signed in :(";
 		}
 		line.active = true;
+
 		db.update({
 			"_id": notify.lineId
 		}, {
@@ -511,46 +533,53 @@ function sendConfirmation(lineId) {
 		var title = line.title;
 		var meetings = line.meetings;
 		var notificationsId = [];
+		var message = [];
 		var notificationsId2 = [];
 		var usersNewTime = [];
+
+		var makeNewTimes = 0;
 		//intarte all users and send confirmation to them
-
-
 		for (var i = 0; i < meetings.length; i++) {
 			var timeToConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 60000);
 			var timeFromConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 180000);
 			var now = new Date();
 			if (!meetings[i].confirmed && now > timeToConfirm) {
+				makeNewTimes = true;
 				notificationsId2.push(meetings[i].userId);
 				line.canceldMeetings.push(meetings[i]);
 				line.meetings.splice(i, 1);
 			} else if (!meetings[i].confirmed && timeFromConfirm <= now <= timeToConfirm) {
+
+				if (makeNewTimes > 0) {
+					meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
+				}
+
 				notificationsId.push(meetings[i].userId);
-				usersNewTime.push(meetings[i].time);
+				message.push("plesae confirm your meeting in line:" + title + " at " + meetings[i].time);
 			}
 
 		}
+		//notify user to confirm line
 		if (notificationsId.length > 0) {
 			var notify = {
 				ids: notificationsId,
 				lineId: lineId,
-				type: "askConfirmed",
-				usersNewTime: usersNewTime,
-				title: title,
+				type: "meeting",
+				message: message,
 				to: "singels"
 			}
 
 			users.notify(notify);
 		}
 
-
+		//notify user line was canceld duo to no confirmation
 		if (notificationsId2.length > 0) {
 
 			var notify2 = {
 				ids: notificationsId2,
 				lineId: lineId,
-				type: "noConfirmation",
-				title: title,
+				message: " your meeting was canceld duo to no comfirmation",
+				type: "remove",
 				to: "all"
 			}
 
