@@ -258,8 +258,7 @@ exports.nextMeeting = function(req, res) {
 
 			if (line.ended) {
 				moveLineToPassed(lineId, title, line.lineManagerId);
-			}
-			else {
+			} else {
 				sendConfirmation(lineId);
 			}
 		});
@@ -537,20 +536,22 @@ function sendConfirmation(lineId) {
 		var message = [];
 		var notificationsId2 = [];
 		var usersNewTime = [];
-
+		var skipNext = false;
 		var makeNewTimes = 0;
 		//intarte all users and send confirmation to them
 		for (var i = 0; i < meetings.length; i++) {
 			var timeToConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 60000);
 			var timeFromConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 180000);
 			var now = new Date();
-			if (!meetings[i].confirmed && now > timeToConfirm) {
-				makeNewTimes = true;
+			if (!meetings[i].confirmed && now > timeToConfirm && !skipNext) {
+				skipNext = true;
+				makeNewTimes++;
 				notificationsId2.push(meetings[i].userId);
 				line.canceldMeetings.push(meetings[i]);
 				line.meetings.splice(i, 1);
-			} else if (!meetings[i].confirmed && timeFromConfirm <= now <= timeToConfirm) {
-
+				i--;
+			} else if (!meetings[i].confirmed && ((timeFromConfirm <= now <= timeToConfirm) || skipNext)) {
+				if (skipNext) skipNext = false;
 				if (makeNewTimes > 0) {
 					meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
 				}
