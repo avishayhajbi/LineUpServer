@@ -612,7 +612,7 @@ function sendConfirmation(lineId) {
 				canceldMeetings: line.canceldMeetings,
 				meetings: line.meetings,
 				nextAvailabeMeeting : line.nextAvailabeMeeting,
-				meetingsCounter:meetingsCounter
+				meetingsCounter:line.meetingsCounter
 			}, function(err, data) {
 				if (err) {
 					console.log("meetingsToCancel.err@ ", err);
