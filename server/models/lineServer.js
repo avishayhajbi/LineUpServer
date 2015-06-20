@@ -469,8 +469,18 @@ function startLine(notify) {
 			return;
 		}
 		if (line.meetings[0]) {
-			line.currentMeeting = line.meetings.pop();
+			line.currentMeeting = line.meetings.shift();
 			notify.message = "line: " + line.title + " started next user:" + line.currentMeeting.userName;
+
+			var notify3 = {
+					ids: line.currentMeeting.userId,
+					message: "please enter line " + line.title,
+					lineId: line.lineId,
+					type: "meeting",
+					to: "one"
+				}
+
+				users.notify(notify3);
 
 			//notifay all line startred
 			var notificationsId = [];
@@ -488,7 +498,6 @@ function startLine(notify) {
 				}
 				users.notify(notify2);
 			}
-
 
 		} else {
 			notify.message = "line: " + line.title + " started but no one signed in :(";
@@ -548,6 +557,7 @@ function sendConfirmation(lineId) {
 			if (!meetings[i].confirmed && now > timeToConfirm && !skipNext) {
 				console.log("user:"+ meetings[i].userName + " meeting canceld becuse not confirmed");
 				skipNext = true;
+				line.meetingsCounter--;
 				line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime()  - line.druation * 60000);
 				makeNewTimes++;
 				notificationsId2.push(meetings[i].userId);
@@ -601,7 +611,8 @@ function sendConfirmation(lineId) {
 			}, {
 				canceldMeetings: line.canceldMeetings,
 				meetings: line.meetings,
-				nextAvailabeMeeting : line.nextAvailabeMeeting
+				nextAvailabeMeeting : line.nextAvailabeMeeting,
+				meetingsCounter:meetingsCounter
 			}, function(err, data) {
 				if (err) {
 					console.log("meetingsToCancel.err@ ", err);
