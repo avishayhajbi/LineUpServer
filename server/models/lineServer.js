@@ -132,7 +132,7 @@ exports.nextMeeting = function(req, res) {
 		var line = data.toJSON();
 		var title = line.title;
 
-		if (!line.currentMeeting) {
+		if (!line.active) {
 			res.send("lineDidntStart");
 			return;
 		}
@@ -610,7 +610,7 @@ function sendConfirmation(lineId) {
 				"_id": lineId
 			}, {
 				canceldMeetings: line.canceldMeetings,
-				meetings: line.meetings,
+				meetings: meetings,
 				nextAvailabeMeeting : line.nextAvailabeMeeting,
 				meetingsCounter:line.meetingsCounter
 			}, function(err, data) {
