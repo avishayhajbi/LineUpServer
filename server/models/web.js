@@ -21,7 +21,7 @@ exports.lineRedirect = function(req, res) {
 			res.status(200).send(home);	
 			return;
 		}
-		var link = 'window.open("lineup://lineId='+req.query.lineId+'", "_system");';
+		var link = 'window.open("lineup://'+req.query.lineId+'", "_system");';
 		res.status(200).send(top+link+bottom);
 }
 
@@ -31,6 +31,6 @@ exports.meetingRedirect = function(req, res) {
 			res.status(200).send(home);	
 			return;
 		}
-		var link = 'window.open("lineup://lineId='+req.query.lineId+'&userId='+userId+'", "_system");';
+		var link = 'window.open("lineup://'+req.query.lineId+'&&'+req.query.userId+'", "_system");';
 		res.status(200).send(top+link+bottom);
 }

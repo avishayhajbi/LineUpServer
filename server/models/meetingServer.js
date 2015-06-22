@@ -145,6 +145,70 @@ exports.joinLine = function(req, res) {
 
 };
 
+exports.followMeeting = function(req, res) {
+
+	if (!req.query.lineId || !req.query.userId || !req.query.myId || !req.query.myName) {
+		console.log('followMeeting@  no search query return nothing');
+		res.send(false);
+		return;
+	}
+
+	var lineId = req.query.lineId;
+	var userId = req.query.userId;
+	var myId = req.query.myId;
+	var myName = req.query.myName;
+
+	var followMeeting = {
+		userId: myId,
+		userName: myName
+	};
+
+	db.findOne({
+		"_id": lineId
+	}, function(err, data) {
+
+		if (err || !data) {
+			console.log("followMeeting.findOne.err@ ", err);
+			res.send(false);
+			return;
+		}
+
+		var line = data.toJSON();
+		var lineManagerId = line.lineManagerId;
+		var title = line.title;
+
+
+		for (var i = 0; i < line.meetings.length; i++) {
+			if (line.meetings[i].userId == userId) {
+				for (var j = 0; j < line.meetings[i].follows.length; j++) {
+					if (line.meetings[i].follows[j].userId == myId) {
+						console.log("user alreadt following this meeting");
+						res.send("alreadyFollowing");
+						return;
+					}
+				}
+				line.meetings[i].follows.push(followMeeting);
+				db.update({
+					"_id": lineId
+				}, {
+					$set: {
+						meetings: line.meetings
+					}
+				}, function(err, data) {
+					if (err || !data) {
+						console.log("followMeeting.findOne.err@ ", err);
+						res.send(false);
+						return;
+						res.send(true);
+					}
+				});
+				break;
+			}
+		}
+	});
+};
+
+
 exports.getMeetingInfo = function(req, res) {
 
 	if (!req.query.lineId || !req.query.userId) {

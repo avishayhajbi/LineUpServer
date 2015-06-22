@@ -14,6 +14,7 @@ module.exports = function(app) {
 	app.get('/api/joinLine?', meetingServer.joinLine);
 	app.get('/api/getMeetingInfo?', meetingServer.getMeetingInfo);
 	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
+	app.get('/api/followMeeting?', meetingServer.followMeeting);
 	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
 
 	app.get('/api/createLine?', lineServer.createLine);

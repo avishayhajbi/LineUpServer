@@ -153,7 +153,7 @@ exports.nextMeeting = function(req, res) {
 		if (!line.meetings[0]) {
 			console.log("no more meetings");
 
-			if (new Date() - line.endDate < line.druation) {
+			if (line.endDate  - new Date()  < line.druation) {
 				console.log("no room for meetings closing line");
 				line.drawMeetings = false;
 				line.ended = false;
@@ -167,7 +167,7 @@ exports.nextMeeting = function(req, res) {
 		} else {
 
 			//if there is more meetings
-			var next = line.meetings.pop();
+			var next = line.meetings.shift();
 			if (next) {
 				line.currentMeeting = next;
 				//nofity next user to enter line

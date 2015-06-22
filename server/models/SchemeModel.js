@@ -27,6 +27,11 @@ var dataSchema = mongoose.model('Lines', {
 		userName: String,
 		confirmed: Boolean,
 		time: Date,
+		follows: [{
+			userId: String,
+			userName: String,
+			_id: false
+		}],
 		_id: false
 	},
 	meetings: [{
@@ -46,6 +51,11 @@ var dataSchema = mongoose.model('Lines', {
 		userName: String,
 		confirmed: Boolean,
 		time: Date,
+		follows: [{
+			userId: String,
+			userName: String,
+			_id: false
+		}],
 		_id: false
 	}],
 	passedMeetings: [{
@@ -53,6 +63,11 @@ var dataSchema = mongoose.model('Lines', {
 		userName: String,
 		confirmed: Boolean,
 		time: Date,
+		follows: [{
+			userId: String,
+			userName: String,
+			_id: false
+		}],
 		_id: false
 	}]
 });
