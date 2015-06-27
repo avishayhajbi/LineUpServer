@@ -68,6 +68,12 @@ exports.getLine = function(req, res) {
 				return;
 			}
 		}
+
+      var now = new Date();
+      if (line.nextAvailabeMeeting < now) {
+        line.nextAvailabeMeeting = now;
+      }
+      
       var lineInfo = {
         startDate: line.startDate,
         endDate: line.endDate,

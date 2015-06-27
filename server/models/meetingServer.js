@@ -55,6 +55,10 @@ exports.joinLine = function(req, res) {
 			}
 		}
 		meeting.confirmed = false;
+		var now = new Date();
+		if (now > line.nextAvailabeMeeting) {
+			line.nextAvailabeMeeting  = now;
+		}
 		meeting.time = line.nextAvailabeMeeting;
 		line.meetingsCounter++;
 
