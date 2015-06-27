@@ -137,7 +137,7 @@ exports.nextMeeting = function(req, res) {
 			return;
 		}
 
-		line.curreintMeeting.meetingTime =  parseInt((new Date().getTime() - line.curreintMeeting.time.getTime()) * 60000);
+		line.curreintMeeting.meetingTime =  parseInt((new Date().getTime() - line.curreintMeeting.time.getTime()) / 60000);
 		if (line.curreintMeeting.meetingTime < 0 )  {
 			line.curreintMeeting.meetingTime = -line.curreintMeeting.meetingTime;
 		}
