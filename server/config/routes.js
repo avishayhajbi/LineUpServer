@@ -7,24 +7,24 @@ var auth = require('./auth');
 
 module.exports = function(app) {
 
-	app.get('/api/getRandomlineList?', lineListsServer.getRandomlineList);
-	app.get('/api/searchLineList?', lineListsServer.searchlineList);
-	app.get('/api/getLine?', lineListsServer.getLine);
+	app.get('/api/getRandomlineList?',users.checkUserToken, lineListsServer.getRandomlineList);
+	app.get('/api/searchLineList?', users.checkUserToken  , lineListsServer.searchlineList);
+	app.get('/api/getLine?',users.checkUserToken, lineListsServer.getLine);
 
-	app.get('/api/joinLine?', meetingServer.joinLine);
-	app.get('/api/getMeetingInfo?', meetingServer.getMeetingInfo);
-	app.get('/api/confirmMeeting?', meetingServer.confirmMeeting);
-	app.get('/api/followMeeting?', meetingServer.followMeeting);
-	app.get('/api/cancelMeeting?', meetingServer.cancelMeeting);
+	app.get('/api/joinLine?',users.checkUserToken, meetingServer.joinLine);
+	app.get('/api/getMeetingInfo?',users.checkUserToken, meetingServer.getMeetingInfo);
+	app.get('/api/confirmMeeting?',users.checkUserToken, meetingServer.confirmMeeting);
+	app.get('/api/followMeeting?',users.checkUserToken, meetingServer.followMeeting);
+	app.get('/api/cancelMeeting?',users.checkUserToken, meetingServer.cancelMeeting);
 
-	app.get('/api/createLine?', lineServer.createLine);
-	app.get('/api/nextMeeting?', lineServer.nextMeeting);
-	app.get('/api/getLineInfo?', lineServer.getLineInfo);
-	app.get('/api/postponeLine?', lineServer.postponeLine);
-	app.get('/api/endLine?', lineServer.endLine);
+	app.get('/api/createLine?',users.checkUserToken, lineServer.createLine);
+	app.get('/api/nextMeeting?',users.checkUserToken, lineServer.nextMeeting);
+	app.get('/api/getLineInfo?',users.checkUserToken, lineServer.getLineInfo);
+	app.get('/api/postponeLine?',users.checkUserToken, lineServer.postponeLine);
+	app.get('/api/endLine?',users.checkUserToken, lineServer.endLine);
 
-	app.get('/api/connectToFB?', users.connectToFaceBook);
-	app.get('/api/updateLists?', users.updateLists);
+	app.get('/api/connectToFB?',users.checkUserToken, users.connectToFaceBook);
+	app.get('/api/updateLists?',users.checkUserToken, users.updateLists);
 	app.get('/api/pushToken?', users.pushToken);
 
 	app.post('/api/logIn', auth.authenticateLogin);

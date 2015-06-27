@@ -1,6 +1,7 @@
 var userdb = require('./SchemeModel.js').userdb;
 var gcm = require('node-gcm');
 
+
 exports.connectToFaceBook = function(req, res) {
 
 	var userId = req.query.userId;
@@ -41,7 +42,7 @@ exports.updateLists = function(req, res) {
 
 	userdb.findOne({
 		userId: userId
-	} , "activeLines passedLines activeMeetings passedMeetings", function(err, data) {
+	}, "activeLines passedLines activeMeetings passedMeetings", function(err, data) {
 
 		if (err || !data) {
 			console.log("updateLists.findOne.err@ " + err);
@@ -57,12 +58,46 @@ exports.updateLists = function(req, res) {
 
 }
 
+exports.checkUserToken = function(req, res, next) {
+
+	if (!req.query.userId || !req.query.userToken) {
+		res.send(false);
+		console.log("fail to auth user");
+		return;
+	}
+
+	userdb.findOne({
+		_id: req.query.userId,
+		userToken: req.query.userToken
+	}, function(err, data) {
+
+		if (err || !data) {
+			res.send(false);
+			console.log("fail to auth user");
+			return;
+		}
+		var user = data.toJSON();
+		if (user._id == req.query.userId && user.userToken == req.query.userToken) {
+			next()
+		} else {
+			res.send(false);
+			console.log("fail to auth user");
+			return;
+		}
+	});
+}
 
 
 
+exports.checkParams = function(req, array) {
+
+
+
+}
 
 
 exports.pushToken = function(req, res) {
+
 	var userId = req.query.userId;
 	var pushToken = req.query.pushToken;
 
@@ -85,7 +120,7 @@ exports.pushToken = function(req, res) {
 }
 
 exports.notify = function(data) {
-	
+
 	var ids = data.ids;
 	delete data.ids;
 
@@ -95,7 +130,7 @@ exports.notify = function(data) {
 			}
 		},
 		function(err, docs) {
-				
+
 			if (err || docs == 0) {
 				console.log("err in notify");
 				return;
@@ -111,12 +146,12 @@ exports.notify = function(data) {
 								token: doc.pushToken,
 								lineId: data.lineId,
 								type: data.type,
-								title:data.title
+								title: data.title
 							});
 						}
 					}
 				}
-			} else  if (data.to == "all") {
+			} else if (data.to == "all") {
 				delete data.to;
 				data.token = [];
 				for (var i = 0; i < docs.length; i++) {
@@ -128,12 +163,12 @@ exports.notify = function(data) {
 					}
 				}
 				sendMessage(data);
-			} else  if (data.to == "one") {
+			} else if (data.to == "one") {
 				delete data.to;
 				var doc = docs[0].toJSON();
-				if(doc.pushToken) {
-				data.token = doc.pushToken;
-				sendMessage(data);
+				if (doc.pushToken) {
+					data.token = doc.pushToken;
+					sendMessage(data);
 				}
 			}
 		}
@@ -147,11 +182,11 @@ function sendMessage(data) {
 	var token = data.token;
 	delete data.token;
 	var message = new gcm.Message();
-	
+
 	for (var i in data) {
 		var key = i;
 		var value = data[i];
-		message.addData(key, value);	
+		message.addData(key, value);
 	}
 
 	message.addData("soundname", 'beep.wav');

@@ -81,6 +81,7 @@ var userSchema = mongoose.model('Users', {
 	username: String,
 	fbId: String,
 	password: String,
+	userToken: String,
 	pushToken: String,
 	email: String,
 	activeLines: [{

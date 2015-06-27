@@ -147,19 +147,19 @@ exports.joinLine = function(req, res) {
 
 exports.followMeeting = function(req, res) {
 
-	if (!req.query.lineId || !req.query.userId || !req.query.myId || !req.query.myName) {
+	if (!req.query.lineId || !req.query.userId || !req.query.FollowId || !req.query.myName) {
 		console.log('followMeeting@  no search query return nothing');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
+	var FollowId = req.query.FollowId;
 	var userId = req.query.userId;
-	var myId = req.query.myId;
 	var myName = req.query.myName;
 
 	var followMeeting = {
-		userId: myId,
+		userId: userId,
 		userName: myName
 	};
 

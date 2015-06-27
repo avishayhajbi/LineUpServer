@@ -8,15 +8,26 @@ var crypto = require('crypto');
 module.exports = function() {
   passport.use('login', new LocalStrategy(
     function(username, password, done) {
-      
-      userdb.findOne({
-        username: username
-      }, "activeMeetings activeLines passedLines passedMeetings password username", function(err, user) {
-        
+      var userToken = randomToken();
+      userdb.findOneAndUpdate({
+        username: username,
+      }, {
+        userToken: userToken
+      }, {
+        new: true
+      }, function(err, user) {
         if (user && isValidPassword(user, password)) {
-          
+
           var returnUser = user.toJSON();
-          delete returnUser.password;
+          returnUser = {
+            _id:returnUser._id,
+            userToken: returnUser.userToken,
+            activeLines: returnUser.activeLines,
+            passedLines: returnUser.passedLines,
+            activeMeetings: returnUser.activeMeetings,
+            passedMeetings: returnUser.passedMeetings
+          }
+
           return done(null, returnUser);
         } else {
           return done(null, false);
@@ -32,15 +43,14 @@ module.exports = function() {
     },
     function(req, username, password, done) {
       
-      //var userToken = randomToken();
+      var userToken = randomToken();
       // find a user in Mongo with provided userName
       userdb.findOneAndUpdate({
         'username': username
-      }, {
-      }, {
+      }, {}, {
         new: true
       }, function(err, user) {
-        
+
         // In case of any error return
         if (err) {
           console.log('Error in SignUp: ' + err);
@@ -58,6 +68,7 @@ module.exports = function() {
           newUser.username = username;
           newUser.password = createHash(password);
           newUser.email = req.body.email;
+          newUser.userToken = userToken;
 
           // save the user
           newUser.save(function(err) {
@@ -66,8 +77,11 @@ module.exports = function() {
               throw err;
             }
             console.log('User Registration succesful');
-            delete newUser.password;
-            return done(null, newUser);
+
+            return done(null, {
+              userToken: newUser.userToken,
+              _id: newUser._id
+            });
           });
         }
       });
@@ -75,6 +89,7 @@ module.exports = function() {
     }));
 
   passport.serializeUser(function(user, done) {
+    
     if (user) {
       done(null, user._id);
     }
@@ -93,17 +108,17 @@ module.exports = function() {
   })
 }
 
-// function randomToken() {
-//   try {
-//     var buf = crypto.randomBytes(48);
+function randomToken() {
+  try {
+    var buf = crypto.randomBytes(48);
 
-//   } catch (ex) {
-//     console.log("no more token");
-//     return null;
-//   }
-//   return buf.toString('hex');
+  } catch (ex) {
+    console.log("no more token");
+    return null;
+  }
+  return buf.toString('hex');
 
-// }
+}
 
 var isValidPassword = function(user, password) {
   return bcrypt.compareSync(password, user.password);

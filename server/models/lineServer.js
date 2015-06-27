@@ -111,18 +111,18 @@ exports.createLine = function(req, res) {
 //im sorry
 exports.nextMeeting = function(req, res) {
 
-	if (!req.query.lineId || !req.query.lineManagerId) {
+	if (!req.query.lineId || !req.query.userId) {
 		console.log('no search query return nothing');
 		res.send(false);
 		return;
 	}
 	var lineId = req.query.lineId;
-	var lineManagerId = req.query.lineManagerId;
+	var lineManagerId = req.query.userId;
 	db.findOne({
 		"_id": lineId,
 		"lineManagerId": lineManagerId
 	}, function(err, data) {
-
+			
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
@@ -167,6 +167,7 @@ exports.nextMeeting = function(req, res) {
 		} else {
 
 			//if there is more meetings
+			
 			var next = line.meetings.shift();
 			if (next) {
 				line.currentMeeting = next;
@@ -180,9 +181,9 @@ exports.nextMeeting = function(req, res) {
 				}
 				users.notify(notify);
 				//nofity next next user if exist is meeting getting closer
-				if (line.meetings[1]) {
+				if (line.meetings[0]) {
 					var notify = {
-						ids: line.meetings[1].userId,
+						ids: line.meetings[0].userId,
 						lineId: lineId,
 						type: "meeting",
 						message: "your are next in line: " + title,
@@ -193,11 +194,11 @@ exports.nextMeeting = function(req, res) {
 				//check if meeting took more than 5 minutes if yes notify all
 				//and change time
 
-				var offset = next.time.getTime() - new Date().getTime();
+				var offset = (next.time.getTime() - new Date().getTime()) / 60000;
 
 				if (offset >= 5 || offset <= 5) {
 
-					line.druationAvarage = (line.druation - offset) * (line.meetingsCounter * line.druationAvarage);
+					line.druationAvarage = ((line.druation - offset) + ((line.meetingsCounter - 1) * line.druationAvarage))/ line.meetingsCounter;
 
 					var notificationsId = [];
 					var message = [];
@@ -268,14 +269,14 @@ exports.nextMeeting = function(req, res) {
 
 exports.postponeLine = function(req, res) {
 
-	if (!req.query.lineId || !req.query.lineManagerId || !req.query.time) {
+	if (!req.query.lineId || !req.query.userId || !req.query.time) {
 		console.log('no req');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var lineManagerId = req.query.lineManagerId;
+	var lineManagerId = req.query.userId;
 	var delayTime = parseInt(req.query.time);
 
 	db.findOne({
@@ -350,14 +351,14 @@ exports.postponeLine = function(req, res) {
 
 exports.endLine = function(req, res) {
 
-	if (!req.query.lineId || !req.query.lineManagerId) {
+	if (!req.query.lineId || !req.query.userId) {
 		console.log('no req');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var id = req.query.lineManagerId;
+	var id = req.query.userId;
 
 	db.findOne({
 		"_id": lineId,
@@ -413,14 +414,14 @@ exports.endLine = function(req, res) {
 
 exports.getLineInfo = function(req, res) {
 
-	if (!req.query.lineId || !req.query.lineManagerId) {
+	if (!req.query.lineId || !req.query.userId) {
 		console.log('noReq');
 		res.send(false);
 		return;
 	}
 
 	var lineId = req.query.lineId;
-	var lineManagerId = req.query.lineManagerId;
+	var lineManagerId = req.query.userId;
 
 	db.findOne({
 		"_id": lineId,
