@@ -45,8 +45,8 @@ exports.joinLine = function(req, res) {
 			console.log("lineEnded");
 			res.send("lineEnded");
 			return;
-
 		}
+		
 		for (var i = 0; i < line.meetings.length; i++) {
 			if (line.meetings[i].userId == userId) {
 				console.log("userSignedIn");
