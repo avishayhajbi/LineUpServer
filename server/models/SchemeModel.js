@@ -63,6 +63,7 @@ var dataSchema = mongoose.model('Lines', {
 		userName: String,
 		confirmed: Boolean,
 		time: Date,
+		meetingTime:Number,
 		follows: [{
 			userId: String,
 			userName: String,
