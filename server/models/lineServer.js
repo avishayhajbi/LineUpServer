@@ -137,10 +137,10 @@ exports.nextMeeting = function(req, res) {
 			return;
 		}
 
-		if (line.curreintMeeting.time) {
-			line.curreintMeeting.meetingTime = parseInt((new Date().getTime() - line.curreintMeeting.time.getTime()) / 60000);
-			if (line.curreintMeeting.meetingTime < 0) {
-				line.curreintMeeting.meetingTime = -line.curreintMeeting.meetingTime;
+		if (line.currentMeeting && line.currentMeeting.time) {
+			line.currentMeeting.meetingTime = parseInt((new Date().getTime() - line.currentMeeting.time.getTime()) / 60000);
+			if (line.currentMeeting.meetingTime < 0) {
+				line.currentMeeting.meetingTime = -line.currentMeeting.meetingTime;
 			}
 		}
 		line.passedMeetings.push(line.currentMeeting);
