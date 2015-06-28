@@ -122,7 +122,7 @@ exports.nextMeeting = function(req, res) {
 		"_id": lineId,
 		"lineManagerId": lineManagerId
 	}, function(err, data) {
-
+		
 		if (err || !data) {
 			console.log(err);
 			res.send(false);
