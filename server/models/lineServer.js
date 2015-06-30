@@ -44,7 +44,7 @@ exports.createLine = function(req, res) {
 		var notify1 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			message: "line: " + title + " will begin in" + (line.druation + line.confirmTime) + " minutes",
+			message: "Line: " + title + " will begin in" + (line.druation + line.confirmTime) + " minutes",
 			type: "line",
 			to: "one"
 		}
@@ -53,7 +53,7 @@ exports.createLine = function(req, res) {
 			ids: line.lineManagerId,
 			lineId: lineId,
 			type: "line",
-			message: "line: " + title + " will begin in 5 minutes",
+			message: "Line: " + title + " will begin in 5 minutes",
 			to: "one"
 		}
 
@@ -149,7 +149,7 @@ exports.nextMeeting = function(req, res) {
 		var notify = {
 			ids: line.currentMeeting.userId,
 			lineId: lineId,
-			message: "thanks u form: " + title,
+			message: "Thank You from: " + title,
 			type: "remove",
 			to: "one"
 		}
@@ -182,7 +182,7 @@ exports.nextMeeting = function(req, res) {
 					ids: line.currentMeeting.userId,
 					lineId: lineId,
 					type: "meeting",
-					message: "please enter to line: " + title,
+					message: "Please enter to line: " + title,
 					to: "one"
 				}
 				users.notify(notify);
@@ -192,7 +192,7 @@ exports.nextMeeting = function(req, res) {
 						ids: line.meetings[0].userId,
 						lineId: lineId,
 						type: "meeting",
-						message: "your are next in line: " + title,
+						message: "Your are next in line: " + title,
 						to: "one"
 					}
 					users.notify(notify);
@@ -308,7 +308,7 @@ exports.postponeLine = function(req, res) {
 			meetings[i].time = new Date(meetings[i].time.getTime() + (delayTime * 60000));
 			var newTimeString = line.meetings[i].time.getHours() + ":" + line.meetings[i].time.getMinutes() + "  " + line.meetings[i].time.getDate() + '/' + line.meetings[i].time.getMonth() + '/' + line.meetings[i].time.getFullYear();
 
-			message.push("Line: " + title + " postpone new time:" + newTimeString);
+			message.push("Line: " + title + " was postponed, your new time is: " + newTimeString);
 			notificationsId.push(meetings[i].userId);
 		}
 
@@ -390,7 +390,7 @@ exports.endLine = function(req, res) {
 		if (notificationsId.length > 0) {
 			var notify = {
 				ids: notificationsId,
-				message: "Line: " + title + " canceld",
+				message: "Line: " + title + " canceled",
 				lineId: lineId,
 				type: "remove",
 				to: "all"
@@ -468,7 +468,7 @@ function startLine(notify) {
 		"_id": notify.lineId
 	}, function(err, data) {
 		if (err || !data) {
-			console.log("cant find line");
+			console.log("Can't find line");
 			return;
 		}
 		var line = data.toJSON();
@@ -481,7 +481,7 @@ function startLine(notify) {
 
 			var notify3 = {
 				ids: line.currentMeeting.userId,
-				message: "please enter line " + line.title,
+				message: "Please enter line " + line.title,
 				lineId: line.lineId,
 				type: "meeting",
 				to: "one"
@@ -497,7 +497,7 @@ function startLine(notify) {
 			if (notificationsId.length > 0) {
 				var notify2 = {
 					ids: notificationsId,
-					message: "line " + line.title + "started",
+					message: "Line " + line.title + " started",
 					lineId: line.lineId,
 					type: "meeting",
 					to: "all"
@@ -507,7 +507,7 @@ function startLine(notify) {
 			}
 
 		} else {
-			notify.message = "line: " + line.title + " started but no one signed in :(";
+			notify.message = "Line: " + line.title + " started but no one signed in :(";
 		}
 		line.active = true;
 
@@ -539,7 +539,7 @@ function sendConfirmation(lineId) {
 	}, function(err, data) {
 
 		if (err || !data) {
-			console.log("cant send confirmation");
+			console.log("Can't send confirmation");
 			return;
 		}
 		var line = data.toJSON();
@@ -562,7 +562,7 @@ function sendConfirmation(lineId) {
 			var timeFromConfirm = new Date(meetings[i].time.getTime() - line.confirmTime * 180000);
 			var now = new Date();
 			if (!meetings[i].confirmed && now > timeToConfirm && !skipNext) {
-				console.log("user:" + meetings[i].userName + " meeting canceld becuse not confirmed");
+				console.log("User: " + meetings[i].userName + " meeting canceld becuse not confirmed");
 				skipNext = true;
 				line.meetingsCounter--;
 				line.nextAvailabeMeeting = new Date(line.nextAvailabeMeeting.getTime() - line.druation * 60000);
@@ -578,14 +578,14 @@ function sendConfirmation(lineId) {
 					meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
 				}
 				notificationsId.push(meetings[i].userId);
-				message.push("plesae confirm your meeting in line:" + title + " at " + meetings[i].time);
+				message.push("Plesae confirm your meeting in line: " + title + " at " + meetings[i].time);
 
 			} else if (makeNewTimes > 0 && meetings[i].confirmed) {
 				console.log("user:" + meetings[i].userName + " got new time:" + meetings[i].time);
 				if (skipNext) skipNext = false;
 				meetings[i].time = meetings[i].time = new Date(meetings[i].time.getTime() - (line.druation * 60000 * makeNewTimes));
 				notificationsId.push(meetings[i].userId);
-				message.push("line " + title + " time updated to: " + meetings[i].time);
+				message.push("Line " + title + " time updated to: " + meetings[i].time);
 			}
 
 		}
@@ -608,7 +608,7 @@ function sendConfirmation(lineId) {
 			var notify2 = {
 				ids: notificationsId2,
 				lineId: lineId,
-				message: " your meeting was canceld duo to no comfirmation",
+				message: "Your meeting was canceled duo to no comfirmation",
 				type: "remove",
 				to: "all"
 			}

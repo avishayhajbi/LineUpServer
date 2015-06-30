@@ -324,7 +324,7 @@ exports.confirmMeeting = function(req, res) {
 			var notify = {
 				ids: line.lineManagerId,
 				lineId: lineId,
-				message: userName + " confirmed line:" + line.title,
+				message: userName + " confirmed line: " + line.title,
 				type: "line",
 				to: "one"
 			}
@@ -408,7 +408,7 @@ exports.cancelMeeting = function(req, res) {
 		var notify2 = {
 			ids: line.lineManagerId,
 			lineId: lineId,
-			message: cancel.userName + " canceled meeting in line:" + line.title,
+			message: cancel.userName + " canceled meeting in line: " + line.title,
 			type: "line",
 			to: "one"
 
