@@ -380,12 +380,17 @@ exports.endLine = function(req, res) {
 		var title = doc.title;
 		var meetings = doc.meetings;
 
+		if(doc.currentMeeting) {
+			doc.passedMeetings.push(doc.currentMeeting);
+		}
+
 
 		var notificationsId = [];
 		for (var i = 0; i < meetings.length; i++) {
 			notificationsId.push(meetings[i].userId);
-
+			doc.passedMeetings.push(meetings[i]);
 		}
+		meetings = [];
 		//notify all users that line ended
 		if (notificationsId.length > 0) {
 			var notify = {
@@ -404,6 +409,9 @@ exports.endLine = function(req, res) {
 			"_id": lineId
 		}, {
 			drawMeetings: false,
+			passedMeetings:doc.passedMeetings,
+			currentMeeting:doc.currentMeeting,
+			meetings:meetings,
 			active: false,
 			ended: true
 		}, function(err, data) {
